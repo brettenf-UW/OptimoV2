@@ -1,0 +1,60 @@
+# OptimoV2 Configuration Settings
+
+pipeline:
+  max_iterations: 3
+  save_intermediate_results: true
+  
+optimization:
+  utilization:
+    min_target: 0.75      # 75% minimum utilization
+    max_target: 1.15      # 115% maximum utilization  
+    optimal_min: 0.80     # 80% optimal lower bound
+    optimal_max: 1.00     # 100% optimal upper bound
+    
+  actions:
+    max_changes_per_iteration: 10
+    min_enrollment_to_keep: 5      # Don't remove sections with >= 5 students
+    
+milp:
+  time_limit: 25200       # 7 hours
+  memory_percentage: 0.95 # Use 95% of available RAM
+  mip_gap: 0.01          # 1% optimality gap
+  threads: -1            # Use all available cores minus 1
+  
+registrar:
+  model: "claude-3-opus-20240229"
+  max_tokens: 2000
+  temperature: 0.1       # Low temperature for consistent decisions
+  
+constraints:
+  max_teacher_sections: 6
+  max_sped_per_section: 3
+  
+  special_courses:
+    "Medical Career":
+      allowed_periods: ["R1", "G1"]
+      max_seats: 15
+      requires_dedicated_teacher: true
+      
+    "Heroes Teach":
+      allowed_periods: ["R2", "G2"]  
+      max_seats: 15
+      requires_dedicated_teacher: true
+      
+    "Sports Med":
+      max_sections_per_period: 1
+
+synthetic_data:
+  sizes:
+    small: 25       # 100 total students (25 per grade)
+    medium: 125     # 500 total students  
+    large: 500      # 2000 total students
+      
+logging:
+  level: INFO
+  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+  
+paths:
+  base_data: "data/base"
+  runs: "data/runs"
+  logs: "logs"

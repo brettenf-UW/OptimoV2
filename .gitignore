@@ -1,0 +1,54 @@
+# Data files
+data/runs/
+data/cache/
+*.csv
+!data/base/*.csv
+!tests/fixtures/*.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+.venv
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Gurobi
+gurobi.log
+*.lp
+*.mps
+*.sol
+
+# Output
+output/
+*.json
+!config/*.json
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# API Keys (extra safety)
+*api_key*
+*API_KEY*
+.secrets/
