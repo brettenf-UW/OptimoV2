@@ -1,0 +1,10 @@
+{
+  "region": "us-west-2",
+  "buckets": {
+    "input": "optimo-input-files",
+    "output": "optimo-output-files"
+  },
+  "api": {
+    "baseUrl": "https://ppwbzsy1bh.execute-api.us-west-2.amazonaws.com/prod"
+  }
+}

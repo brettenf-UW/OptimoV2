@@ -1,12 +1,13 @@
 import axios, { AxiosInstance } from 'axios';
 import { Job, JobSubmissionData, JobResults } from '../types';
+import config from '../config';
 
 class ApiService {
   private api: AxiosInstance;
 
   constructor() {
-    // Base URL will be updated when AWS endpoint is ready
-    const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    // Use the API URL from the config file
+    const baseURL = process.env.REACT_APP_API_URL || config.api.baseUrl;
     
     this.api = axios.create({
       baseURL,
@@ -16,24 +17,49 @@ class ApiService {
     });
   }
 
-  // Upload files and submit job
-  async submitJob(data: JobSubmissionData): Promise<Job> {
-    const formData = new FormData();
-    
-    // Append files
-    Object.entries(data.files).forEach(([key, file]) => {
-      if (file) {
-        formData.append(key, file);
+  // Get all jobs
+  async getJobs(): Promise<Job[]> {
+    const response = await this.api.get<Job[]>('/jobs');
+    return response.data;
+  }
+
+  // Get presigned URL for file upload
+  async getUploadUrl(fileName: string, fileType: string): Promise<{uploadUrl: string, fileKey: string}> {
+    const response = await this.api.post('/upload', { fileName, fileType });
+    return response.data;
+  }
+
+  // Upload file using presigned URL
+  async uploadFile(url: string, file: File): Promise<void> {
+    await axios.put(url, file, {
+      headers: {
+        'Content-Type': file.type
       }
     });
+  }
+
+  // Submit job with file keys
+  async submitJob(data: JobSubmissionData): Promise<Job> {
+    // First upload all files and get their keys
+    const fileKeys: string[] = [];
     
-    // Append parameters
-    formData.append('parameters', JSON.stringify(data.parameters));
+    for (const [key, file] of Object.entries(data.files)) {
+      if (file) {
+        // Get presigned URL
+        const { uploadUrl, fileKey } = await this.getUploadUrl(file.name, file.type);
+        
+        // Upload file
+        await this.uploadFile(uploadUrl, file);
+        
+        // Add file key to the list
+        fileKeys.push(fileKey);
+      }
+    }
     
-    const response = await this.api.post<Job>('/jobs', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    // Submit job with file keys
+    const response = await this.api.post<Job>('/jobs', {
+      files: fileKeys,
+      parameters: data.parameters
     });
     
     return response.data;
@@ -41,24 +67,26 @@ class ApiService {
 
   // Get job status
   async getJobStatus(jobId: string): Promise<Job> {
-    const response = await this.api.get<Job>(`/jobs/${jobId}`);
+    const response = await this.api.get<Job>(`/jobs/${jobId}/status`);
     return response.data;
   }
 
-  // Get all jobs
-  async getJobs(): Promise<Job[]> {
-    const response = await this.api.get<Job[]>('/jobs');
+  // Get job results
+  async getJobResults(jobId: string): Promise<{downloadUrls: Record<string, string>}> {
+    const response = await this.api.get<{downloadUrls: Record<string, string>}>(`/jobs/${jobId}/results`);
     return response.data;
   }
 
-  // Download result file
-  async downloadResult(jobId: string, resultType: keyof JobResults): Promise<Blob> {
-    const response = await this.api.get(`/jobs/${jobId}/results/${resultType}`, {
-      responseType: 'blob',
+  // Download result file using presigned URL - returns the Blob directly
+  async downloadResult(url: string, fileName: string): Promise<Blob> {
+    const response = await axios.get(url, {
+      responseType: 'blob'
     });
-    return response.data;
+    
+    // Return the blob directly
+    return new Blob([response.data]);
   }
-
+  
   // Cancel job
   async cancelJob(jobId: string): Promise<void> {
     await this.api.post(`/jobs/${jobId}/cancel`);
