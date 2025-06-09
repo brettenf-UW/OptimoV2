@@ -1,0 +1,48 @@
+Section ID,Course ID,Teacher Assigned,# of Seats Available,Department
+S001,Medical Career,T001,15,Special
+S002,Medical Career,T001,15,Special
+S003,Heroes Teach,T002,15,Special
+S004,Heroes Teach,T002,15,Special
+S005,Study Hall,T015,25,General
+S006,Study Hall,T016,25,General
+S007,Study Hall,T015,25,General
+S008,Study Hall,T016,25,General
+S009,PE,T013,35,PE
+S010,PE,T014,35,PE
+S011,Sports Med,T013,15,PE
+S012,Sports Med,T014,15,PE
+S013,Sports Med,T013,15,PE
+S014,Sports Med,T014,15,PE
+S015,Sports Med,T013,15,PE
+S016,World History,T011,25,Social Studies
+S017,World History,T012,25,Social Studies
+S018,Math 4,T005,25,Math
+S019,Math 4,T006,25,Math
+S020,Physics,T007,30,Science
+S021,Physics,T008,30,Science
+S022,Economics,T011,25,Social Studies
+S023,Economics,T012,25,Social Studies
+S024,English 12,T003,25,English
+S025,English 12,T004,25,English
+S026,US History,T011,25,Social Studies
+S027,US History,T012,25,Social Studies
+S028,English 11,T003,25,English
+S029,English 11,T004,25,English
+S030,Math 3,T005,25,Math
+S031,Math 3,T006,25,Math
+S032,English 9,T003,25,English
+S033,English 9,T004,25,English
+S034,Government,T011,25,Social Studies
+S035,Government,T012,25,Social Studies
+S036,Math 1,T005,25,Math
+S037,Math 1,T006,25,Math
+S038,Chemistry,T009,30,Science
+S039,Chemistry,T010,30,Science
+S040,Biology,T007,30,Science
+S041,Biology,T008,30,Science
+S042,AP Biology,T009,30,Science
+S043,AP Biology,T010,30,Science
+S044,Math 2,T005,25,Math
+S045,Math 2,T006,25,Math
+S046,English 10,T003,25,English
+S047,English 10,T004,25,English

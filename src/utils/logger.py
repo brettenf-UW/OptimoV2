@@ -6,7 +6,7 @@ import logging
 import sys
 from pathlib import Path
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Optional
 
 
 def setup_logger(name: str, config: Dict, log_dir: Optional[Path] = None) -> logging.Logger:

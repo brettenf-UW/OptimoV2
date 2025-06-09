@@ -48,8 +48,8 @@ class RegistrarAgent:
             
         except Exception as e:
             print(f"Error getting registrar decisions: {str(e)}")
-            # Fall back to heuristic rules
-            return self._heuristic_decisions(summary_stats)
+            print("Please check your API key and try again.")
+            raise e  # Don't fall back to heuristics
             
     def _format_prompt(self, template: str, summary_stats: Dict) -> str:
         """Format the prompt template with actual data"""
@@ -57,11 +57,17 @@ class RegistrarAgent:
         # Create formatted sections list
         problem_sections_str = json.dumps(summary_stats['problem_sections'], indent=2)
         summary_stats_str = json.dumps(summary_stats['summary_stats'], indent=2)
+        course_context_str = json.dumps(summary_stats.get('course_context', {}), indent=2)
+        teacher_loads_str = json.dumps(summary_stats.get('teacher_loads', {}), indent=2)
+        department_summary_str = json.dumps(summary_stats.get('department_summary', {}), indent=2)
         
         # Replace template variables
         prompt = template.format(
             summary_stats=summary_stats_str,
             problem_sections=problem_sections_str,
+            course_context=course_context_str,
+            teacher_loads=teacher_loads_str,
+            department_summary=department_summary_str,
             max_teacher_sections=self.config.get('constraints', {}).get('max_teacher_sections', 6),
             max_changes=self.max_changes
         )
@@ -113,13 +119,21 @@ class RegistrarAgent:
             if field not in action:
                 return False
                 
+        # Additional validation for MERGE - must have exactly 2 section IDs
+        if action_type == 'MERGE':
+            section_ids = action.get('section_ids', [])
+            if not isinstance(section_ids, list) or len(section_ids) != 2:
+                print(f"MERGE action must have exactly 2 section_ids, got {len(section_ids)}")
+                return False
+                
         return True
         
     def _heuristic_decisions(self, summary_stats: Dict) -> List[Dict]:
-        """Fallback heuristic rules if AI fails"""
+        """Fallback heuristic rules if AI fails - respects one action per course"""
         
         actions = []
         problem_sections = summary_stats.get('problem_sections', [])
+        course_actions = {}  # Track one action per course
         
         # Group by course for merge opportunities
         course_sections = {}
@@ -129,49 +143,78 @@ class RegistrarAgent:
                 course_sections[course] = []
             course_sections[course].append(section)
             
-        # Apply simple rules
+        # Apply simple rules - ONE ACTION PER COURSE
         for section in problem_sections:
+            course = section['course']
+            
+            # Skip if we already have an action for this course
+            if course in course_actions:
+                continue
+                
             util_str = section['utilization']
             util_pct = float(util_str.rstrip('%')) / 100
+            enrollment_info = section.get('enrollment_vs_capacity', '0/0')
+            enrolled = int(enrollment_info.split('/')[0])
+            capacity = int(enrollment_info.split('/')[1])
             
-            # Over capacity - split
-            if util_pct > 1.15 and len(actions) < self.max_changes:
-                actions.append({
-                    'action': 'SPLIT',
-                    'section_id': section['section_id'],
-                    'reason': f"{section['utilization']} utilization"
-                })
+            # Over capacity - split or add (>110%)
+            if util_pct > 1.10 and len(actions) < self.max_changes:
+                if util_pct > 1.30:  # Severely over capacity
+                    action = {
+                        'action': 'ADD',
+                        'course': section['course'],
+                        'reason': f"Severe overcrowding at {section['utilization']} - need additional section"
+                    }
+                    actions.append(action)
+                    course_actions[course] = action
+                elif util_pct > 1.20:  # Moderately over, try split
+                    action = {
+                        'action': 'SPLIT',
+                        'section_id': section['section_id'],
+                        'reason': f"{section['utilization']} utilization with {enrolled} students"
+                    }
+                    actions.append(action)
+                    course_actions[course] = action
                 
-            # Under capacity - try to merge
-            elif util_pct < 0.75 and len(actions) < self.max_changes:
+            # Under capacity - try to merge (<70%)
+            elif util_pct < 0.70 and len(actions) < self.max_changes:
                 # Look for merge partner
                 course = section['course']
                 partners = [s for s in course_sections[course] 
                            if s['section_id'] != section['section_id'] 
-                           and float(s['utilization'].rstrip('%')) / 100 < 0.75]
+                           and float(s['utilization'].rstrip('%')) / 100 < 0.70]
                 
                 if partners:
-                    # Check if we haven't already planned to merge these
-                    existing_merges = [a for a in actions if a['action'] == 'MERGE']
-                    section_ids = {section['section_id'], partners[0]['section_id']}
-                    
-                    already_planned = any(
-                        set(a['section_ids']) & section_ids 
-                        for a in existing_merges
-                    )
-                    
-                    if not already_planned:
-                        actions.append({
-                            'action': 'MERGE',
-                            'section_ids': [section['section_id'], partners[0]['section_id']],
-                            'reason': f"Both sections under 75% utilization"
-                        })
+                    # Find best merge partner
+                    for partner in partners:
+                        partner_info = partner.get('enrollment_vs_capacity', '0/0')
+                        partner_enrolled = int(partner_info.split('/')[0])
+                        combined_enrollment = enrolled + partner_enrolled
                         
-                elif util_pct < 0.25:  # Very low - remove
-                    actions.append({
-                        'action': 'REMOVE',
-                        'section_id': section['section_id'],
-                        'reason': f"Only {section['utilization']} utilization"
-                    })
+                        # Check if combined would be in target range
+                        avg_capacity = (capacity + int(partner_info.split('/')[1])) / 2
+                        combined_util = combined_enrollment / avg_capacity
+                        
+                        if 0.70 <= combined_util <= 1.10:
+                            action = {
+                                'action': 'MERGE',
+                                'section_ids': [section['section_id'], partner['section_id']],
+                                'reason': f"Both under 70% utilization, combined would be {combined_util:.0%}"
+                            }
+                            actions.append(action)
+                            course_actions[course] = action
+                            break
+                
+                # If no merge partner found, consider removal
+                elif util_pct < 0.70:
+                    is_only_section = len(course_sections[course]) == 1
+                    if util_pct < 0.65 or is_only_section:
+                        action = {
+                            'action': 'REMOVE',
+                            'section_id': section['section_id'],
+                            'reason': f"Only {util_pct:.0%} utilization, no merge partner available"
+                        }
+                        actions.append(action)
+                        course_actions[course] = action
                     
         return actions[:self.max_changes]

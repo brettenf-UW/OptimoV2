@@ -16,7 +16,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from src.pipeline.iteration_manager import IterationManager
 from src.optimization.utilization_analyzer import UtilizationAnalyzer
-from src.optimization.registrar_agent import RegistrarAgent
+from src.optimization.registrar_agent_gemini import RegistrarAgentGemini
 from src.optimization.action_processor import ActionProcessor
 from src.utils.logger import setup_logger
 
@@ -35,7 +35,10 @@ class PipelineRunner:
             min_target=self.config['optimization']['utilization']['min_target'],
             max_target=self.config['optimization']['utilization']['max_target']
         )
-        self.registrar = RegistrarAgent(api_key, self.config)
+        
+        # Initialize Gemini AI agent
+        self.registrar = RegistrarAgentGemini(api_key, self.config)
+            
         self.action_processor = ActionProcessor(self.config)
         
         # Setup logging
@@ -61,6 +64,10 @@ class PipelineRunner:
         best_iteration = 0
         best_score = float('inf')
         results = []
+        
+        # Early stopping tracking
+        consecutive_no_change = 0
+        max_no_change = 1  # Stop immediately when no changes can be made
         
         max_iterations = self.config['pipeline']['max_iterations']
         
@@ -152,21 +159,43 @@ class PipelineRunner:
                     )
                     
                     self.logger.info(f"Applied {changes_log['actions_applied']} actions successfully")
+                    
+                    # Check for early stopping
+                    if changes_log['actions_applied'] == 0:
+                        consecutive_no_change += 1
+                        self.logger.info(f"No actions applied this iteration (consecutive: {consecutive_no_change})")
+                        
+                        if consecutive_no_change >= max_no_change:
+                            self.logger.info(f"Stopping early - no progress in {max_no_change} consecutive iterations")
+                            break
+                    else:
+                        consecutive_no_change = 0  # Reset counter
+                        
                 else:
                     self.logger.info("No actions suggested by registrar")
+                    consecutive_no_change += 1
                     
+                    if consecutive_no_change >= max_no_change:
+                        self.logger.info(f"Stopping early - no actions suggested for {max_no_change} consecutive iterations")
+                        break
+                    
+        # Get final analysis for the best iteration
+        best_output_dir = self.iteration_manager.get_iteration_output(best_iteration)
+        final_analysis = self.analyzer.analyze_schedule(best_output_dir)
+        
         # Finalize run with best iteration
         self.logger.info(f"\nOptimization complete! Best result from iteration {best_iteration}")
         self.iteration_manager.finalize_run(best_iteration)
         
-        # Return summary
+        # Return summary with final analysis
         return {
             'status': 'completed',
             'best_iteration': best_iteration,
             'best_score': best_score,
             'total_iterations': len(results),
             'final_path': str(run_path / 'final'),
-            'results': results
+            'results': results,
+            'final_analysis': final_analysis
         }
         
     def _run_milp(self, workspace: Dict) -> bool:
@@ -181,12 +210,14 @@ class PipelineRunner:
             env['INPUT_DIR'] = str(workspace['input_dir'])
             env['OUTPUT_DIR'] = str(workspace['output_dir'])
             
-            # Run MILP
+            # Run MILP with UTF-8 encoding to avoid Windows decode errors
             result = subprocess.run(
                 [sys.executable, str(milp_path)],
                 env=env,
                 capture_output=True,
                 text=True,
+                encoding='utf-8',
+                errors='replace',
                 cwd=workspace['input_dir']
             )
             

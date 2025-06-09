@@ -56,7 +56,7 @@ Your input directory must contain:
 
 ```bash
 # Set API key (required)
-export ANTHROPIC_API_KEY="your-api-key-here"
+export GEMINI_API_KEY="your-api-key-here"
 
 # Install dependencies
 pip install -r requirements.txt

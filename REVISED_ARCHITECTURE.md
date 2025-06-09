@@ -5,7 +5,7 @@
 1. **Gurobi MILP Engine (milp_soft.py)**: UNCHANGED - This is the core that works well
 2. **Greedy Algorithm**: UNCHANGED - Still provides initial solution to Gurobi
 3. **Data Models**: Just Python classes for data validation/passing, NOT optimization models
-4. **Registrar AI**: Only sees summary statistics, NO student personal data
+4. **Registrar AI**: Gemini-based agent that only sees summary statistics, NO student personal data
 
 ## What We're Actually Building
 
@@ -31,7 +31,7 @@ OptimoV2/
 │   │   └── state_tracker.py      # Tracks what changed between iterations
 │   │
 │   ├── optimization/              # NEW - Improved registrar agent
-│   │   ├── registrar_agent.py   # AI agent for section optimization
+│   │   ├── registrar_agent_gemini.py # Gemini AI agent for section optimization
 │   │   ├── utilization_analyzer.py # Creates summary stats for AI
 │   │   └── action_processor.py   # Applies SPLIT/MERGE/ADD/REMOVE actions
 │   │

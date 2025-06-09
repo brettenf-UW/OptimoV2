@@ -25,7 +25,7 @@ def main():
                        default='config/settings.yaml',
                        help='Path to configuration file')
     parser.add_argument('--api-key', type=str,
-                       help='Anthropic API key (or set ANTHROPIC_API_KEY env var)')
+                       help='Gemini API key (or set GEMINI_API_KEY env var)')
     parser.add_argument('--input-dir', type=str,
                        help='Override input directory')
     parser.add_argument('--generate-test-data', type=str, 
@@ -62,19 +62,26 @@ def main():
             print("\nTest data generated successfully!")
             print("="*60)
     
-    # Get API key
-    api_key = args.api_key or os.environ.get('ANTHROPIC_API_KEY')
-    if not api_key:
-        print("Error: Anthropic API key not provided")
-        print("Set ANTHROPIC_API_KEY environment variable or use --api-key")
-        sys.exit(1)
-        
-    # Get config path
+    # Load config to determine AI provider
     config_path = base_dir / args.config
-    
     if not config_path.exists():
         print(f"Error: Configuration file not found: {config_path}")
         sys.exit(1)
+    
+    import yaml
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+    
+    # Always use Gemini as AI provider
+    ai_provider = 'gemini'
+    
+    # Get Gemini API key
+    api_key = args.api_key or os.environ.get('GEMINI_API_KEY')
+    if not api_key:
+        print("Error: Gemini API key not provided")
+        print("Set GEMINI_API_KEY environment variable or use --api-key")
+        sys.exit(1)
+        
         
     # Copy input files if specified
     if args.input_dir:
@@ -131,6 +138,7 @@ def main():
     # Run pipeline
     try:
         print("\nStarting OptimoV2 Pipeline...")
+        print("Using AI provider: GEMINI")
         print("="*60)
         
         runner = PipelineRunner(config_path, api_key)
@@ -142,12 +150,43 @@ def main():
         print(f"Final score: {results['best_score']:.2f}")
         print(f"Output saved to: {results['final_path']}")
         
+        # Display utilization range
+        if 'final_analysis' in results:
+            print("\n" + "="*60)
+            print("UTILIZATION SUMMARY:")
+            print("="*60)
+            
+            min_util = results['final_analysis'].get('min_utilization')
+            max_util = results['final_analysis'].get('max_utilization')
+            
+            if min_util:
+                print(f"\nLowest Utilization Section:")
+                print(f"  Section: {min_util['section_id']} ({min_util['course']})")
+                print(f"  Utilization: {min_util['utilization_pct']} ({min_util['enrolled']}/{min_util['capacity']} students)")
+                
+            if max_util:
+                print(f"\nHighest Utilization Section:")
+                print(f"  Section: {max_util['section_id']} ({max_util['course']})")
+                print(f"  Utilization: {max_util['utilization_pct']} ({max_util['enrolled']}/{max_util['capacity']} students)")
+                
+            # Show target range
+            print(f"\nTarget Range: 70%-110%")
+            
+            # Show sections within range
+            util_summary = results['final_analysis']['utilization_summary']
+            total_sections = results['final_analysis']['total_sections']
+            in_range = util_summary['optimal_range']
+            
+            print(f"Sections in target range: {in_range}/{total_sections} ({in_range/total_sections:.1%})")
+            print(f"Average utilization: {util_summary['average_utilization']}")
+        
     except KeyboardInterrupt:
         print("\nPipeline interrupted by user")
         sys.exit(1)
     except Exception as e:
         print(f"\nError: {str(e)}")
-        if args.debug:
+        print(f"Error type: {type(e).__name__}")
+        if args.debug or True:  # Always show traceback for debugging
             import traceback
             traceback.print_exc()
         sys.exit(1)

@@ -3,6 +3,13 @@ import os
 import logging
 from datetime import datetime
 import platform
+import sys
+import io
+
+# Fix for Windows console encoding issues
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 # Third-party imports
 import gurobipy as gp
@@ -57,7 +64,7 @@ class ScheduleOptimizer:
 
     def setup_logging(self):
         """Set up logging configuration"""
-        output_dir = 'output'
+        output_dir = os.environ.get('OUTPUT_DIR', 'output')
         os.makedirs(output_dir, exist_ok=True)
         
         # Use a single log file instead of timestamped logs
@@ -227,7 +234,7 @@ class ScheduleOptimizer:
                 name=f'link_xyz_{student_id}_{section_id}_{period}'
             )
 
-        # 7. SPED student distribution constraint (soft)
+        # 7. SPED student distribution constraint (HARD - max 12 SPED students per section)
         sped_students = self.students[self.students['SPED'] == 1]['Student ID']
         for section_id in self.sections['Section ID']:
             self.model.addConstr(
@@ -241,14 +248,12 @@ class ScheduleOptimizer:
 
     def set_objective(self):
         """Set the objective function to minimize capacity violations (student satisfaction is guaranteed)"""
-        # Calculate total section capacity 
-        total_capacity = sum(self.sections['# of Seats Available'])
         
         # With hard constraints for course assignments, we only need to minimize capacity violations
         capacity_penalty = gp.quicksum(self.capacity_violation[section_id]
                                      for section_id in self.capacity_violation)
                                           
-        # Log the new objective focus
+        # Log the objective focus
         self.logger.info(f"Objective: Minimize capacity violations (100% student satisfaction guaranteed)")
         
         # Set objective to minimize capacity violations
@@ -535,7 +540,7 @@ class ScheduleOptimizer:
 
     def save_solution(self):
         """Save the solution to CSV files"""
-        output_dir = 'output'
+        output_dir = os.environ.get('OUTPUT_DIR', 'output')
         os.makedirs(output_dir, exist_ok=True)
 
         # Track existing files and ensure they're created

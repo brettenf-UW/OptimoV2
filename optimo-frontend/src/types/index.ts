@@ -1,0 +1,49 @@
+export interface FileUpload {
+  name: string;
+  file: File;
+  status: 'pending' | 'uploading' | 'success' | 'error';
+  progress?: number;
+  error?: string;
+}
+
+export interface Job {
+  id: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  createdAt: Date;
+  updatedAt: Date;
+  progress: number;
+  currentStep?: string;
+  error?: string;
+  results?: JobResults;
+  maxIterations?: number;
+}
+
+export interface JobResults {
+  masterSchedule?: string;
+  studentAssignments?: string;
+  teacherSchedule?: string;
+  constraintViolations?: string;
+  utilizationReport?: string;
+}
+
+export interface UploadedFiles {
+  studentInfo?: File;
+  studentPreferences?: File;
+  teacherInfo?: File;
+  teacherUnavailability?: File;
+  sectionsInfo?: File;
+  periods?: File;
+}
+
+export interface JobSubmissionData {
+  files: UploadedFiles;
+  parameters: OptimizationParameters;
+}
+
+export interface OptimizationParameters {
+  maxIterations: number;
+  minUtilization: number;
+  maxUtilization: number;
+  optimalMinUtilization: number;
+  optimalMaxUtilization: number;
+}

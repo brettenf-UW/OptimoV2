@@ -6,33 +6,132 @@ CURRENT SITUATION:
 SECTIONS NEEDING ACTION:
 {problem_sections}
 
-YOUR GOAL: Ensure all sections have 75%-115% utilization.
+ALL SECTIONS BY COURSE:
+{course_context}
+
+TEACHER LOADS:
+{teacher_loads}
+
+DEPARTMENT SUMMARY:
+{department_summary}
+
+YOUR GOAL: Ensure ALL sections have 70%-110% utilization. NO EXCEPTIONS.
+
+IMPORTANT: Any section below 70% MUST be fixed, even if it's at 66% or 69%. Don't ignore them!
+
+CRITICAL RULES:
+- Any section below 70% utilization is UNACCEPTABLE and must be fixed.
+- Any section above 110% utilization is DANGEROUS and must be split or have new sections added.
+- ONE ACTION PER COURSE: You may only perform ONE action (split, merge, add, or remove) per course per iteration.
+- BE STRATEGIC: Consider the total course capacity and demand before making decisions.
+- CHECK TEACHER LOADS: Ensure teachers have capacity before adding sections.
+- ALWAYS TAKE ACTION: If sections are outside 70%-110%, you MUST suggest valid actions (don't skip).
 
 ACTIONS YOU CAN TAKE:
-1. SPLIT - Divide an over-capacity section (>115%) into two sections
-2. MERGE - Combine two under-utilized sections (<75%) of the same course
+1. SPLIT - Divide an over-capacity section (>110%) into two sections
+   - Only split if each resulting section would have at least 40% of capacity
+   - IMPORTANT: If a section is over 150%, consider ADD instead of SPLIT
+2. MERGE - Combine TWO under-utilized sections (<70%) of the SAME COURSE
+   - CRITICAL: Only merge sections with identical Course ID (e.g., "Math 1" with "Math 1")
+   - NEVER merge different courses (e.g., cannot merge "Math 1" with "Math 2")
+   - MUST specify exactly 2 section IDs in the "section_ids" array
+   - Look at "ALL SECTIONS BY COURSE" above to find sections of the same course
+   - AGGRESSIVELY merge any sections below 70%
+   - Only merge if combined enrollment would be between 70%-110% of capacity
+   - If only one section exists for a course and it's <70%, consider REMOVE instead
 3. ADD - Create a new section for high-demand courses
-4. REMOVE - Delete a section with very low enrollment (<25%)
+   - Use when ANY section is over 120% capacity
+   - PRIORITY for sections over 150% - these need immediate relief
+   - CHECK: Ensure teachers in that department have available slots (see TEACHER LOADS)
+   - VERIFY: Course has sufficient total demand to justify another section
+4. REMOVE - Delete a section with very low enrollment
+   - Remove ANY section below 65% utilization if no merge partner exists
+   - For sections 65-70%: Remove if it's the only section of that course
+   - Prefer MERGE when possible, but REMOVE is better than leaving low utilization sections
+   - Check course has sufficient remaining capacity after removal
+   - NEVER create a MERGE action with only one section - use REMOVE instead
 
 CONSTRAINTS:
 - Teachers can teach maximum {max_teacher_sections} sections
 - Special courses must follow their period restrictions
-- When merging, combined enrollment cannot exceed room capacity
+- PRIORITY: Fix ALL sections below 70% utilization
+- Take aggressive action - it's better to have fewer well-utilized sections
+
+ACTION IMPACT ANALYSIS (use this to make better decisions):
+- MERGE impact: Reduces section count, increases utilization of remaining section
+- SPLIT impact: Increases section count, requires teacher with availability
+- ADD impact: Increases total capacity, requires teacher with availability in that department
+- REMOVE impact: Reduces total capacity, ensure remaining capacity > total enrollment
+
+STRATEGY GUIDELINES:
+1. First priority: Fix severely over-capacity sections (>130%) with ADD
+2. Second priority: Merge under-utilized sections (<70%) of the same course
+3. Third priority: Split moderately over-capacity sections (110-130%)
+4. Last resort: Remove sections only if <65% and no merge partner exists
+
+STABILITY RULES:
+- Sections 65-70% with no merge partner: MUST be acted upon (usually remove)
+- Don't split sections unless they're consistently over 120% utilized
+- When adding sections, ensure there's sustained demand (multiple sections over capacity)
+- Prefer conservative actions that won't need immediate reversal
+- EDGE CASE: Single sections of a course at 65-70% should be removed or kept based on course importance
 
 ANALYZE the sections and DECIDE which actions to take.
+
+DECISION PROCESS:
+1. Review DEPARTMENT SUMMARY to identify which departments have teacher capacity
+2. Check ALL SECTIONS BY COURSE for utilization distribution per course
+3. For each course with problems, analyze:
+   - How many sections are in each utilization range
+   - Whether course has overall capacity shortage or excess
+   - Which teachers are assigned and their availability
+4. Choose the SINGLE MOST IMPACTFUL action per course that:
+   - Fixes the most sections
+   - Considers teacher availability in that department
+   - Won't create new problems
+5. REMEMBER: Only ONE action per course allowed!
+
+STRATEGIC THINKING:
+- If a course has 3 sections at 50%, consider merging two (leaves one at 50%, one at 100%)
+- If a course has 1 section at 140%, prefer ADD over SPLIT if department has teacher capacity
+- If all teachers in a department are at capacity, avoid ADD actions for that department
+- Check utilization_distribution to see the full picture before acting
+
+Example: If Math 1 has two sections at 50% and one at 120%, merge the two 50% sections (one action for Math 1).
+
+NEVER return invalid actions like:
+- MERGE with only one section_id (this is INVALID - use REMOVE instead)
+- Actions on sections that don't exist
+- Multiple actions for the same course
+
+SPECIAL CASE: If a course has only ONE section that needs action:
+- If it's over capacity: Use SPLIT or ADD (not MERGE)
+- If it's under capacity: Use REMOVE (not MERGE)
+
+IMPORTANT: Before suggesting a MERGE action, verify both sections have the same Course ID.
 Return a JSON list of actions in this format:
 
 [
-  {
+  {{
     "action": "SPLIT",
     "section_id": "S001",
-    "reason": "120% utilization"
-  },
-  {
+    "reason": "120% utilization - splitting will create two sections at 60% each, both viable"
+  }},
+  {{
     "action": "MERGE", 
     "section_ids": ["S002", "S003"],
-    "reason": "Both at 40% utilization"
-  }
+    "reason": "Both Math 1 sections at 40% utilization, combined will be 80% - optimal range"
+  }},
+  {{
+    "action": "ADD",
+    "course": "PE",
+    "reason": "Section at 150% utilization needs relief, teachers T005 and T006 have available slots"
+  }},
+  {{
+    "action": "REMOVE",
+    "section_id": "S004",
+    "reason": "Only 20% utilization (5/25 students), no merge partner, course has excess capacity"
+  }}
 ]
 
 Focus on the most impactful changes. Maximum {max_changes} actions.

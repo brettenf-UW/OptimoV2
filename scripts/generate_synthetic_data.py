@@ -12,6 +12,12 @@ import yaml
 import argparse
 from pathlib import Path
 import sys
+import io
+
+# Fix for Windows console encoding issues
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -315,9 +321,15 @@ def generate_synthetic_data(output_path, students_per_grade=25):
         # Always create at least 2 sections, and ensure enough capacity
         num_sections = max(MIN_SECTIONS_PER_COURSE, min_sections_needed)
         
-        # Add extra section if close to capacity
-        if (requests / (num_sections * section_size)) > 0.85:
-            num_sections += 1
+        # Add buffer capacity to ensure sections start around 75-85% utilization
+        # This gives the optimizer room to work without starting at extremes
+        target_initial_utilization = 0.80  # Target 80% initial utilization
+        ideal_sections = math.ceil(requests / (section_size * target_initial_utilization))
+        num_sections = max(num_sections, ideal_sections)
+        
+        # Don't create too many sections (avoid starting with very low utilization)
+        max_sections = math.ceil(requests / (section_size * 0.60))  # Don't go below 60%
+        num_sections = min(num_sections, max_sections)
             
         return num_sections, section_size
 
@@ -343,8 +355,8 @@ def generate_synthetic_data(output_path, students_per_grade=25):
     unavailability = []
     
     for teacher in teachers:
-        if random.random() < 0.1:  # chance of unavailability
-            unavail_periods = random.sample(periods, random.randint(1, 2))
+        if random.random() < 0.05:  # Reduced chance of unavailability to 5%
+            unavail_periods = random.sample(periods, 1)  # Only 1 period unavailable
             unavailability.append({
                 'Teacher ID': teacher['Teacher ID'],
                 'Unavailable Periods': ','.join(unavail_periods)
@@ -374,7 +386,13 @@ def generate_synthetic_data(output_path, students_per_grade=25):
     print(f"  Courses: {len(unique_courses)}")
     print(f"  SPED Students: {sum(1 for s in students if s['SPED'] == 'Yes')}")
     print(f"  Special Course Students: ~{int(len(students) * SPECIAL_COURSE_RATIO)}")
-    print(f"\nFiles saved to: {output_path}")
+    # Fix Unicode issue by encoding the path
+    try:
+        print(f"\nFiles saved to: {output_path}")
+    except UnicodeEncodeError:
+        # Fallback to ASCII representation
+        safe_path = output_path.encode('ascii', 'replace').decode('ascii')
+        print(f"\nFiles saved to: {safe_path}")
 
 
 def main():

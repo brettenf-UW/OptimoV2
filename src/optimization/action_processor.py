@@ -96,10 +96,23 @@ class ActionProcessor:
         section = sections_df[section_mask].iloc[0]
         enrolled = enrollment_counts.get(section_id, 0)
         
-        # Calculate new capacities (split evenly)
+        # Calculate new capacities based on enrollment
         original_capacity = section['# of Seats Available']
-        new_capacity_1 = original_capacity // 2
-        new_capacity_2 = original_capacity - new_capacity_1
+        
+        # Use percentage-based approach for minimum viable section size
+        # Each split section should have at least min_split_ratio of original
+        min_split_ratio = self.config.get('optimization', {}).get('actions', {}).get('min_split_ratio', 0.40)
+        
+        # Check if both sections would be viable after split
+        if original_capacity >= original_capacity * min_split_ratio * 2:
+            # Split evenly if both sections will be viable
+            new_capacity_1 = original_capacity // 2
+            new_capacity_2 = original_capacity - new_capacity_1
+        else:
+            # Keep original capacity for both sections
+            # This handles cases where splitting would create too-small sections
+            new_capacity_1 = original_capacity
+            new_capacity_2 = original_capacity
         
         # Update original section
         sections_df.loc[section_mask, '# of Seats Available'] = new_capacity_1
@@ -145,14 +158,21 @@ class ActionProcessor:
         enrolled2 = enrollment_counts.get(section_ids[1], 0)
         combined_enrollment = enrolled1 + enrolled2
         
-        # Use larger capacity or sum if needed
-        new_capacity = max(
+        # Keep the larger of the two original capacities (don't double capacity)
+        # This maintains realistic class sizes while accommodating current enrollment
+        larger_capacity = max(
             section1['# of Seats Available'],
-            section2['# of Seats Available'],
-            combined_enrollment + 5  # Buffer of 5 seats
+            section2['# of Seats Available']
         )
         
-        # Update first section with combined capacity
+        # Only increase capacity if absolutely necessary to fit current students
+        # Add minimal buffer (2-3 seats) to avoid immediate over-capacity
+        if combined_enrollment > larger_capacity:
+            new_capacity = combined_enrollment + 2
+        else:
+            new_capacity = larger_capacity
+        
+        # Update first section with appropriate capacity
         sections_df.loc[section1_mask, '# of Seats Available'] = new_capacity
         
         # Remove second section
@@ -197,16 +217,28 @@ class ActionProcessor:
         section_id = action['section_id']
         enrolled = enrollment_counts.get(section_id, 0)
         
-        # Safety check - don't remove if too many students
-        min_enrollment = self.config.get('optimization', {}).get('actions', {}).get('min_enrollment_to_keep', 5)
-        if enrolled >= min_enrollment:
-            print(f"Section {section_id} has {enrolled} students, too many to remove")
+        # Get section capacity
+        section_mask = sections_df['Section ID'] == section_id
+        if not section_mask.any():
+            print(f"Section {section_id} not found")
+            return sections_df, False
+            
+        section = sections_df[section_mask].iloc[0]
+        capacity = section['# of Seats Available']
+        
+        # Safety check - only allow removal if utilization is below 65%
+        # This aligns with the AI registrar's removal threshold
+        utilization = enrolled / capacity if capacity > 0 else 0
+        max_removal_utilization = self.config.get('optimization', {}).get('utilization', {}).get('remove_threshold', 0.65)
+        
+        if utilization >= max_removal_utilization:
+            print(f"Section {section_id} has {utilization:.0%} utilization ({enrolled}/{capacity}), too high to remove")
             return sections_df, False
             
         # Remove the section
         sections_df = sections_df[sections_df['Section ID'] != section_id]
         
-        print(f"Removed section {section_id} with {enrolled} students")
+        print(f"Removed section {section_id} with {utilization:.0%} utilization ({enrolled} students)")
         return sections_df, True
         
     def save_changes_log(self, changes_log: Dict, output_path: Path):

@@ -8,8 +8,14 @@ class ScheduleDataLoader:
 
     def __init__(self):
         """Initialize file paths and debug logging."""
-        self.project_root = Path(__file__).parent.parent
-        self.input_dir = self.project_root / 'input'
+        # Check for environment variable first (set by pipeline)
+        if os.environ.get('INPUT_DIR'):
+            self.input_dir = Path(os.environ['INPUT_DIR'])
+            self.project_root = self.input_dir.parent.parent
+        else:
+            # Fallback to default location
+            self.project_root = Path(__file__).parent.parent.parent
+            self.input_dir = self.project_root / 'data' / 'base'
         self.debug_dir = self.project_root / 'debug'
         self.debug_dir.mkdir(parents=True, exist_ok=True)
 

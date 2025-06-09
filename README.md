@@ -6,7 +6,7 @@ A next-generation school scheduling system that uses MILP optimization and AI-po
 
 - **Preserved Core**: Uses your existing Gurobi MILP engine unchanged
 - **Clean Iterations**: No file conflicts or data corruption
-- **AI Registrar**: Claude-powered optimization with clear, action-based decisions
+- **AI Registrar**: Gemini-powered optimization with clear, action-based decisions
 - **Privacy-First**: AI only sees utilization statistics, no personal data
 - **Full Audit Trail**: Every change tracked and reversible
 
@@ -36,9 +36,9 @@ pip install -r requirements.txt
 ### 2. Set Up Configuration
 
 1. Copy your Gurobi license file to the project root
-2. Set your Anthropic API key:
+2. Set your Gemini API key:
    ```bash
-   export ANTHROPIC_API_KEY="your-api-key-here"
+   export GEMINI_API_KEY="your-api-key-here"
    ```
 
 ### 3. Prepare Input Data
