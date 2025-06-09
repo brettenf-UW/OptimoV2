@@ -14,35 +14,35 @@ S012,Sports Med,T014,15,PE
 S013,Sports Med,T013,15,PE
 S014,PE,T014,35,PE
 S015,PE,T013,35,PE
-S016,Biology,T007,30,Science
-S017,Biology,T008,30,Science
-S018,US History,T011,25,Social Studies
-S019,US History,T012,25,Social Studies
-S020,English 11,T003,25,English
-S021,English 11,T004,25,English
-S022,Physics,T009,30,Science
-S023,Physics,T010,30,Science
-S024,Math 2,T005,25,Math
-S025,Math 2,T006,25,Math
-S026,English 12,T003,25,English
-S027,English 12,T004,25,English
-S028,Math 4,T005,25,Math
-S029,Math 4,T006,25,Math
+S016,Math 3,T005,25,Math
+S017,Math 3,T006,25,Math
+S018,Chemistry,T007,30,Science
+S019,Chemistry,T008,30,Science
+S020,US History,T011,25,Social Studies
+S021,US History,T012,25,Social Studies
+S022,Government,T011,25,Social Studies
+S023,Government,T012,25,Social Studies
+S024,English 9,T003,25,English
+S025,English 9,T004,25,English
+S026,English 10,T003,25,English
+S027,English 10,T004,25,English
+S028,Math 2,T005,25,Math
+S029,Math 2,T006,25,Math
 S030,World History,T011,25,Social Studies
 S031,World History,T012,25,Social Studies
-S032,Government,T011,25,Social Studies
-S033,Government,T012,25,Social Studies
-S034,Math 3,T005,25,Math
-S035,Math 3,T006,25,Math
-S036,Economics,T011,25,Social Studies
-S037,Economics,T012,25,Social Studies
-S038,English 9,T003,25,English
-S039,English 9,T004,25,English
-S040,AP Biology,T007,30,Science
-S041,AP Biology,T008,30,Science
-S042,Chemistry,T009,30,Science
-S043,Chemistry,T010,30,Science
-S044,English 10,T003,25,English
-S045,English 10,T004,25,English
-S046,Math 1,T005,25,Math
-S047,Math 1,T006,25,Math
+S032,English 11,T003,25,English
+S033,English 11,T004,25,English
+S034,Biology,T009,30,Science
+S035,Biology,T010,30,Science
+S036,Math 4,T005,25,Math
+S037,Math 4,T006,25,Math
+S038,English 12,T003,25,English
+S039,English 12,T004,25,English
+S040,Physics,T007,30,Science
+S041,Physics,T008,30,Science
+S042,Math 1,T005,25,Math
+S043,Math 1,T006,25,Math
+S044,Economics,T011,25,Social Studies
+S045,Economics,T012,25,Social Studies
+S046,AP Biology,T009,30,Science
+S047,AP Biology,T010,30,Science

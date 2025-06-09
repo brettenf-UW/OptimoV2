@@ -12,7 +12,7 @@ This guide outlines a streamlined deployment approach for OptimoV2 using GitHub 
 
 ### ✅ Phase 2: AWS Backend (COMPLETE)
 - **Infrastructure**: Fully deployed
-- **API Gateway**: Implemented with 4 endpoints
+- **API Gateway**: Implemented with 5 endpoints
 - **Lambda Functions**: Created and configured
 - **AWS Batch**: Set up with c5.24xlarge instances
 - **Status**: Ready for production use
@@ -89,13 +89,16 @@ This guide outlines a streamlined deployment approach for OptimoV2 using GitHub 
    - ✅ Created role `optimo-lambda-role` for Lambda with S3 access
    - ✅ Created role `optimo-batch-role` for Batch with S3 access
    - ✅ Set up appropriate policies for each role
+   - ✅ Added permissions for Secrets Manager access
 
 3. **API Gateway**
    - ✅ Created REST API `optimo-api` with endpoints:
      - ✅ `POST /upload` - For generating presigned URLs
      - ✅ `POST /jobs` - For job submission
+     - ✅ `GET /jobs` - For listing all jobs
      - ✅ `GET /jobs/{jobId}/status` - For checking job status
      - ✅ `GET /jobs/{jobId}/results` - For retrieving results
+     - ✅ `POST /jobs/{jobId}/cancel` - For canceling jobs
    - ✅ Deployed to production stage
 
 ### Phase 3: AWS Batch Configuration
@@ -138,6 +141,16 @@ This guide outlines a streamlined deployment approach for OptimoV2 using GitHub 
    - ✅ Implemented presigned URL generation for result downloads
    - ✅ Configured with environment variables
 
+5. **Job Listing**
+   - ✅ Created `optimo-jobs-list` Lambda function
+   - ✅ Implemented retrieval of all jobs from DynamoDB
+   - ✅ Configured with environment variables
+
+6. **Job Cancellation**
+   - ✅ Created `optimo-job-cancel` Lambda function
+   - ✅ Implemented AWS Batch job cancellation
+   - ✅ Added status update in DynamoDB
+
 ### Phase 5: Frontend Integration
 
 #### ✅ **COMPLETED:**
@@ -147,11 +160,26 @@ This guide outlines a streamlined deployment approach for OptimoV2 using GitHub 
    - ✅ Implemented presigned URL workflow for file uploads
    - ✅ Updated job status checking to use new API endpoints
    - ✅ Implemented result downloading using presigned URLs
+   - ✅ Added job cancellation functionality
 
 2. **Build and Deployment**
    - ✅ Updated build process to include AWS configuration
+   - ✅ Fixed TypeScript errors in the API service
    - ✅ Tested production build with AWS backend
    - ✅ Deployed to GitHub Pages
+
+### Phase 6: Gurobi License Management
+
+#### ✅ **COMPLETED:**
+1. **Secure License Storage**
+   - ✅ Created AWS Secrets Manager secret for Gurobi license
+   - ✅ Set up IAM permissions for Batch jobs to access the secret
+   - ✅ Updated Batch job definition with environment variables
+
+2. **Runtime License Retrieval**
+   - ✅ Updated batch job script to retrieve license at runtime
+   - ✅ Implemented secure license handling in the container
+   - ✅ Added proper error handling and logging
 
 ## Frontend Integration Details
 
@@ -159,23 +187,22 @@ The frontend has been updated to work with the AWS backend using the following a
 
 ### Configuration
 
-Created a configuration file at `optimo-frontend/src/config.ts` that imports AWS settings:
+Created a configuration file at `optimo-frontend/src/config.ts`:
 
 ```typescript
-// Import AWS configuration from the project root
-import awsConfig from '../../config/aws_config.json';
-
-// Export configuration for use in the frontend
-export default {
+// src/config.ts
+const config = {
   api: {
-    baseUrl: awsConfig.api.baseUrl
+    baseUrl: process.env.REACT_APP_API_URL || "https://ppwbzsy1bh.execute-api.us-west-2.amazonaws.com/prod"
   },
   buckets: {
-    input: awsConfig.buckets.input,
-    output: awsConfig.buckets.output
+    input: "optimo-input-files",
+    output: "optimo-output-files"
   },
-  region: awsConfig.region
+  region: "us-west-2"
 };
+
+export default config;
 ```
 
 ### API Service Updates
@@ -201,7 +228,7 @@ async uploadFile(url: string, file: File): Promise<void> {
 // Submit job with file keys
 async submitJob(data: JobSubmissionData): Promise<Job> {
   // First upload all files and get their keys
-  const fileKeys = [];
+  const fileKeys: string[] = [];
   
   for (const [key, file] of Object.entries(data.files)) {
     if (file) {
@@ -217,12 +244,27 @@ async submitJob(data: JobSubmissionData): Promise<Job> {
   }
   
   // Submit job with file keys
-  const response = await this.api.post('/jobs', {
+  const response = await this.api.post<Job>('/jobs', {
     files: fileKeys,
     parameters: data.parameters
   });
   
   return response.data;
+}
+
+// Download result file using presigned URL
+async downloadResult(url: string, fileName: string): Promise<Blob> {
+  const response = await axios.get(url, {
+    responseType: 'blob'
+  });
+  
+  // Return the blob directly
+  return new Blob([response.data]);
+}
+
+// Cancel job
+async cancelJob(jobId: string): Promise<void> {
+  await this.api.post(`/jobs/${jobId}/cancel`);
 }
 ```
 
@@ -230,23 +272,51 @@ async submitJob(data: JobSubmissionData): Promise<Job> {
 
 To build and deploy the frontend with AWS integration:
 
-1. Ensure the AWS configuration is correctly set up in `config/aws_config.json`
+1. Ensure the environment variables are set in `.env`:
+   ```
+   REACT_APP_API_URL=https://ppwbzsy1bh.execute-api.us-west-2.amazonaws.com/prod
+   ```
+
 2. Navigate to the frontend directory:
    ```bash
    cd optimo-frontend
    ```
+
 3. Install dependencies:
    ```bash
    npm install
    ```
+
 4. Build the production version:
    ```bash
    npm run build
    ```
+
 5. Deploy to GitHub Pages:
    ```bash
    npm run deploy
    ```
+
+## Gurobi License Management
+
+The Gurobi license is securely managed using AWS Secrets Manager:
+
+1. **Secret Storage**:
+   - Created a secret named `optimo/gurobi-license` in AWS Secrets Manager
+   - License content is encrypted at rest and in transit
+
+2. **Access Control**:
+   - Added IAM policy to `optimo-batch-role` to allow access to the secret
+   - Only authorized batch jobs can retrieve the license
+
+3. **Runtime Retrieval**:
+   - Batch job script retrieves the license at runtime
+   - License is stored in the container's ephemeral storage
+   - Environment variable `GRB_LICENSE_FILE` is set to point to the license file
+
+4. **License Updates**:
+   - License can be updated in Secrets Manager without rebuilding Docker images
+   - All new batch jobs will automatically use the updated license
 
 ## Next Steps and Considerations
 
@@ -275,3 +345,8 @@ To build and deploy the frontend with AWS integration:
    - Set up automated testing for the pipeline
    - Create backup strategy for important data
    - Document the deployment process for team members
+
+6. **Troubleshooting**
+   - Check CloudWatch logs for Lambda function errors
+   - Verify CORS settings in API Gateway
+   - Monitor S3 bucket permissions and access
