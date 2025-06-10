@@ -1,165 +1,97 @@
 # OptimoV2 Frontend
 
-A React-based web interface for the OptimoV2 class schedule optimization system. This application provides an intuitive UI for uploading scheduling data, configuring optimization parameters, monitoring job progress, and downloading results.
+React-based web application for the OptimoV2 class schedule optimization system.
 
 ## Features
 
-- **File Upload**: Drag-and-drop interface for uploading CSV files
-- **Job Submission**: Configure optimization parameters and submit jobs
-- **Real-time Status Tracking**: Monitor job progress with live updates
-- **Results Download**: Download optimized schedules and reports
-- **Material-UI Design**: Clean, professional interface
-- **GitHub Pages Ready**: Configured for easy deployment
+- **File Upload**: Drag-and-drop CSV file uploads with validation
+- **Job Management**: Submit, monitor, and cancel optimization jobs
+- **Real-time Updates**: Live progress tracking with iteration details
+- **Results Visualization**: Interactive charts and downloadable results
+- **Job History**: View and access previous optimization runs
 
-## Prerequisites
+## Tech Stack
 
-- Node.js 16+ and npm
-- Git (for version control)
+- React 18 with TypeScript
+- Material-UI for components
+- Recharts for data visualization
+- Axios for API communication
+- GitHub Pages for hosting
 
-## Setup Instructions
+## Development
 
-### 1. Install Dependencies
+### Prerequisites
+- Node.js 16+
+- npm or yarn
 
+### Setup
 ```bash
-cd optimo-frontend
+# Install dependencies
 npm install
-```
 
-### 2. Configure Environment
-
-Create a `.env` file in the root directory:
-
-```env
-REACT_APP_API_URL=https://your-api-endpoint.com/api
-```
-
-### 3. Run Development Server
-
-```bash
+# Start development server
 npm start
 ```
 
-The application will be available at `http://localhost:3000`.
+The app runs at http://localhost:3000
 
-## Building for Production
-
-```bash
-npm run build
+### Environment Variables
+Create a `.env` file:
+```
+REACT_APP_API_URL=https://3dbrbfl8f3.execute-api.us-west-2.amazonaws.com/prod
 ```
 
-This creates an optimized production build in the `build/` directory.
-
-## Deployment
-
-### GitHub Pages
-
-1. Update the `homepage` field in `package.json`:
-   ```json
-   "homepage": "https://yourusername.github.io/OptimoV2"
-   ```
-
-2. Deploy to GitHub Pages:
-   ```bash
-   npm run deploy
-   ```
-
-### Automated Deployment
-
-The project includes a GitHub Actions workflow that automatically deploys to GitHub Pages when you push to the `main` branch.
+For local development with mock server:
+```
+REACT_APP_API_URL=http://localhost:5000/api
+```
 
 ## Project Structure
 
 ```
-optimo-frontend/
-├── public/               # Static assets
-├── src/
-│   ├── components/      # React components
-│   │   ├── FileUpload.tsx
-│   │   ├── JobSubmission.tsx
-│   │   ├── JobStatus.tsx
-│   │   └── Results.tsx
-│   ├── services/        # API service layer
-│   │   └── api.ts
-│   ├── types/           # TypeScript definitions
-│   │   └── index.ts
-│   ├── App.tsx          # Main application component
-│   └── index.tsx        # Application entry point
-├── .github/
-│   └── workflows/       # GitHub Actions
-└── package.json
-
+src/
+├── components/         # React components
+│   ├── FileUpload.tsx    # File upload interface
+│   ├── JobSubmission.tsx # Job configuration and submission
+│   ├── JobStatus.tsx     # Status monitoring and history
+│   └── Results.tsx       # Results display and charts
+├── services/          # API integration
+│   └── api.ts           # API service layer
+├── types/             # TypeScript definitions
+├── App.tsx           # Main application component
+└── index.tsx         # Application entry point
 ```
 
-## Component Overview
+## Building & Deployment
 
-### FileUpload
-- Drag-and-drop file upload interface
-- Validates required vs optional files
-- Shows upload status for each file
+### Production Build
+```bash
+npm run build
+```
 
-### JobSubmission
-- Optimization parameter configuration
-- Utilization target sliders
-- AI provider selection
-- Job submission handling
+### Deploy to GitHub Pages
+```bash
+npm run deploy
+```
 
-### JobStatus
-- Real-time job progress tracking
-- Job history list
-- Auto-refresh for active jobs
-- Cancel job functionality
-
-### Results
-- Download individual result files
-- Download all results at once
-- Shows job completion details
+The app is deployed to: https://brettenf-uw.github.io/OptimoV2
 
 ## API Integration
 
-The application expects the following API endpoints:
+The frontend communicates with AWS services through API Gateway:
 
-- `POST /api/jobs` - Submit new optimization job
-- `GET /api/jobs` - List all jobs
-- `GET /api/jobs/:id` - Get job status
-- `POST /api/jobs/:id/cancel` - Cancel job
-- `GET /api/jobs/:id/results/:type` - Download result file
+- **File Upload**: Uses presigned S3 URLs for secure uploads
+- **Job Submission**: Sends jobs to AWS Batch via Lambda
+- **Status Updates**: Polls for real-time progress
+- **Results**: Downloads from S3 with presigned URLs
 
-## Required CSV Files
+## Contributing
 
-The system requires these CSV files:
-- `Student_Info.csv` - Student enrollment data
-- `Teacher_Info.csv` - Teacher availability
-- `Course_Info.csv` - Course definitions
-- `Room_Info.csv` - Room capacity and features
+1. Create a feature branch
+2. Make your changes
+3. Test thoroughly
+4. Submit a pull request
 
-Optional files:
-- `Student_Requests.csv` - Student course preferences
-- `Teacher_Preferences.csv` - Teacher scheduling preferences
+## License
 
-## Development
-
-### Available Scripts
-
-- `npm start` - Run development server
-- `npm test` - Run tests
-- `npm run build` - Build for production
-- `npm run deploy` - Deploy to GitHub Pages
-
-### Code Style
-
-The project uses TypeScript for type safety. Follow these conventions:
-- Use functional components with hooks
-- Define interfaces for all props and state
-- Keep components focused and reusable
-- Use Material-UI components consistently
-
-## Troubleshooting
-
-### Build Issues
-- Clear npm cache: `npm cache clean --force`
-- Delete `node_modules` and reinstall: `rm -rf node_modules && npm install`
-
-### Deployment Issues
-- Ensure GitHub Pages is enabled in repository settings
-- Check that the `homepage` field in `package.json` is correct
-- Verify GitHub Actions has permissions to deploy
+MIT License - See LICENSE file for details

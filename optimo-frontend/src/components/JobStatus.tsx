@@ -62,6 +62,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [iterations, setIterations] = useState<IterationProgress[]>([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Generate iteration progress based on job progress
   const updateIterationProgress = (job: Job) => {
@@ -137,7 +138,9 @@ export const JobStatus: React.FC<JobStatusProps> = ({
   };
 
   const fetchJobs = async () => {
-    setLoading(true);
+    if (!isInitialLoad) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const fetchedJobs = await api.getJobs();
@@ -151,6 +154,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({
       });
       // Show the 5 most recent jobs (including running ones)
       setJobs(sortedJobs.slice(0, 5));
+      setIsInitialLoad(false);
     } catch (err: any) {
       console.error('Failed to fetch jobs:', err);
       setError('Failed to fetch jobs');
@@ -187,6 +191,23 @@ export const JobStatus: React.FC<JobStatusProps> = ({
     fetchJobs();
   }, [refreshTrigger]); // Refetch when a new job is submitted
 
+  // Add a small delay when refreshTrigger changes to ensure the new job is in the database
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      const timer = setTimeout(() => {
+        fetchJobs();
+      }, 1000); // 1 second delay
+      return () => clearTimeout(timer);
+    }
+  }, [refreshTrigger]);
+
+  // Also fetch jobs on mount and when showJobsList changes
+  useEffect(() => {
+    if (showJobsList) {
+      fetchJobs();
+    }
+  }, [showJobsList]);
+
   useEffect(() => {
     if (jobId) {
       fetchJobStatus(jobId);
@@ -194,14 +215,16 @@ export const JobStatus: React.FC<JobStatusProps> = ({
   }, [jobId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (selectedJob && (
+    if (selectedJob && selectedJob.id && (
       selectedJob.status === 'pending' || selectedJob.status === 'running' ||
       selectedJob.status === 'PENDING' || selectedJob.status === 'RUNNING' ||
       selectedJob.status === 'SUBMITTED' || selectedJob.status === 'RUNNABLE' ||
       selectedJob.status === 'STARTING'
     )) {
       const interval = setInterval(() => {
-        fetchJobStatus(selectedJob.id);
+        if (selectedJob.id) {
+          fetchJobStatus(selectedJob.id);
+        }
       }, 2000); // Poll every 2 seconds for smoother updates
 
       return () => clearInterval(interval);
@@ -311,7 +334,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({
               </Alert>
             )}
 
-            {selectedJob && selectedJob.id === jobId && (
+            {selectedJob && selectedJob.id && selectedJob.id === jobId && (
             <>
               <Card sx={{ mb: 3, bgcolor: 'background.default' }}>
                 <CardContent>
@@ -412,17 +435,21 @@ export const JobStatus: React.FC<JobStatusProps> = ({
       )}
 
       {showJobsList && (
-        <Card sx={{ mt: showCurrentJob && jobId ? 3 : 0 }}>
-          <CardContent>
+        <Card sx={{ 
+          mt: showCurrentJob && jobId ? 3 : 0,
+          backgroundColor: 'transparent',
+          boxShadow: 'none'
+        }}>
+          <CardContent sx={{ p: 0 }}>
             {!showCurrentJob && (
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
                 <IconButton onClick={fetchJobs} disabled={loading} size="small">
                   <RefreshIcon />
                 </IconButton>
               </Box>
             )}
 
-            <List sx={{ py: 0 }}>
+            <List sx={{ py: 0, px: 0 }}>
             {jobs.map((job, index) => {
               // Ensure job has required properties
               const jobId = job?.id || job?.jobId || `unknown-${index}`;
@@ -439,7 +466,8 @@ export const JobStatus: React.FC<JobStatusProps> = ({
                     
                     // Toggle selection
                     if (selectedJobId === jobId) {
-                      // Deselect
+                      // Deselect - this should clear the selection
+                      setSelectedJob(null);
                       if (onJobSelect) {
                         onJobSelect(null);
                       }
@@ -450,7 +478,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({
                         onJobSelect(jobData);
                       }
                       // If job is completed, trigger the results view
-                      if ((jobStatus === 'completed' || jobStatus === 'COMPLETED') && onJobComplete) {
+                      if ((jobStatus === 'completed' || jobStatus === 'COMPLETED' || jobStatus === 'SUCCEEDED') && onJobComplete) {
                         onJobComplete(jobData);
                       }
                     }
@@ -458,14 +486,17 @@ export const JobStatus: React.FC<JobStatusProps> = ({
                   sx={{ 
                     borderRadius: 1, 
                     mb: 1,
-                    backgroundColor: 'transparent',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e0e0e0',
                     '&:hover': {
-                      backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                      backgroundColor: '#f5f5f5',
+                      borderColor: '#1976d2',
                     },
                     '&.Mui-selected': {
-                      backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                      backgroundColor: '#e3f2fd',
+                      borderColor: '#1976d2',
                       '&:hover': {
-                        backgroundColor: 'rgba(25, 118, 210, 0.16)',
+                        backgroundColor: '#bbdefb',
                       }
                     }
                   }}
@@ -482,17 +513,40 @@ export const JobStatus: React.FC<JobStatusProps> = ({
                       </Typography>
                     }
                     secondary={
-                      <Typography variant="body2" color="text.secondary">
-                        {(jobStatus === 'running' || jobStatus === 'RUNNING') && `In Progress • ${job.progress || 0}%`}
+                      <Box component="span">
+                        {(jobStatus === 'running' || jobStatus === 'RUNNING') && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" color="primary" component="span">
+                              In Progress • {job.progress || 0}%
+                            </Typography>
+                            <LinearProgress 
+                              variant="determinate" 
+                              value={job.progress || 0} 
+                              sx={{ width: 60, height: 4 }}
+                            />
+                          </Box>
+                        )}
                         {(jobStatus === 'completed' || jobStatus === 'COMPLETED' || jobStatus === 'SUCCEEDED') && 
-                          <span style={{ color: '#4caf50', fontWeight: 500 }}>
+                          <Typography variant="body2" component="span" sx={{ color: '#4caf50', fontWeight: 500 }}>
                             ✓ Completed • Click to view results
-                          </span>
+                          </Typography>
                         }
-                        {(jobStatus === 'failed' || jobStatus === 'FAILED') && <span style={{ color: '#f44336' }}>✗ Failed</span>}
-                        {(jobStatus === 'pending' || jobStatus === 'PENDING' || jobStatus === 'SUBMITTED') && 'Queued...'}
-                        {(jobStatus === 'RUNNABLE' || jobStatus === 'STARTING') && 'Starting...'}
-                      </Typography>
+                        {(jobStatus === 'failed' || jobStatus === 'FAILED') && 
+                          <Typography variant="body2" component="span" sx={{ color: '#f44336' }}>
+                            ✗ Failed
+                          </Typography>
+                        }
+                        {(jobStatus === 'pending' || jobStatus === 'PENDING' || jobStatus === 'SUBMITTED') && 
+                          <Typography variant="body2" color="text.secondary" component="span">
+                            Queued...
+                          </Typography>
+                        }
+                        {(jobStatus === 'RUNNABLE' || jobStatus === 'STARTING') && 
+                          <Typography variant="body2" color="primary" component="span">
+                            Starting...
+                          </Typography>
+                        }
+                      </Box>
                     }
                   />
                   <ListItemSecondaryAction>

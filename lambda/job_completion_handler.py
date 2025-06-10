@@ -29,9 +29,30 @@ def lambda_handler(event, context):
     try:
         print(f"Received event: {json.dumps(event)}")
         
-        # Get job ID from event
-        job_id = event.get('jobId')
-        status = event.get('status', 'COMPLETED')  # Default to COMPLETED if not specified
+        # Check if this is an EventBridge event from AWS Batch
+        if event.get('source') == 'aws.batch' and event.get('detail-type') == 'Batch Job State Change':
+            # Extract job details from EventBridge event
+            detail = event.get('detail', {})
+            batch_job_id = detail.get('jobId')
+            status = detail.get('status')
+            job_name = detail.get('jobName', '')
+            
+            # Extract our job ID from the job name (format: optimo-job-{uuid})
+            if job_name.startswith('optimo-job-'):
+                job_id = job_name.replace('optimo-job-', '')
+            else:
+                print(f"Job name doesn't match expected format: {job_name}")
+                return {'statusCode': 200, 'body': json.dumps({'message': 'Not an Optimo job'})}
+                
+            # Map AWS Batch status to our status
+            if status == 'SUCCEEDED':
+                status = 'COMPLETED'
+            elif status == 'FAILED':
+                status = 'FAILED'
+        else:
+            # Direct invocation (legacy support)
+            job_id = event.get('jobId')
+            status = event.get('status', 'COMPLETED')
         
         if not job_id:
             return {

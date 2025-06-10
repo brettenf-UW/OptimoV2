@@ -92,7 +92,10 @@ function App() {
 
   const handleJobSubmitted = (jobId: string) => {
     setCurrentJobId(jobId);
-    setRefreshTrigger(prev => prev + 1); // Trigger history refresh
+    // Add a small delay before triggering refresh to ensure the job is in the database
+    setTimeout(() => {
+      setRefreshTrigger(prev => prev + 1); // Trigger history refresh
+    }, 500);
     handleNext();
   };
 
@@ -105,9 +108,33 @@ function App() {
 
   const handleHistoryJobSelect = (job: Job | null) => {
     setSelectedHistoryJob(job);
-    if (job && (job.status === 'completed' || job.status === 'COMPLETED')) {
-      setCompletedJob(job);
-      setActiveStep(3); // Jump to results step
+    if (job) {
+      // When selecting a job
+      if (job.status === 'completed' || job.status === 'COMPLETED' || job.status === 'SUCCEEDED') {
+        setCompletedJob(job);
+        setActiveStep(3); // Jump to results step
+      } else if (job.status === 'failed' || job.status === 'FAILED') {
+        // For failed jobs, just select them but don't change step
+        setCompletedJob(null);
+      } else {
+        // For running/pending jobs, show their progress
+        setCompletedJob(null);
+        // Don't change the active step, just highlight the job
+      }
+    } else {
+      // When deselecting, always allow going back to submission
+      setCompletedJob(null);
+      // Keep the current step unless we were viewing results from history
+      if (selectedHistoryJob && activeStep === 3 && completedJob?.id === selectedHistoryJob.id) {
+        // If we were viewing history results, go back to the appropriate step
+        if (currentJobId) {
+          setActiveStep(2); // Go back to monitoring if there's a current job
+        } else if (allRequiredFilesUploaded) {
+          setActiveStep(1); // Go to submit if files are uploaded
+        } else {
+          setActiveStep(0); // Otherwise go to file upload
+        }
+      }
     }
   };
 
