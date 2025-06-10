@@ -4,8 +4,14 @@ import os
 import uuid
 import time
 import decimal
+import logging
+import traceback
 from datetime import datetime
 from boto3.dynamodb.conditions import Attr
+
+# Configure logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 # Initialize clients
 dynamodb = boto3.resource('dynamodb')
@@ -26,8 +32,20 @@ class DecimalEncoder(json.JSONEncoder):
         return super(DecimalEncoder, self).default(o)
 
 def lambda_handler(event, context):
+    # Handle OPTIONS preflight requests
+    if event.get('httpMethod') == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': 'https://brettenf-uw.github.io',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+            },
+            'body': ''
+        }
+    
     try:
-        print(f"Received event: {json.dumps(event)}")
+        logger.info(f"Received event: {json.dumps(event)}")
         
         # Parse request body
         body = json.loads(event.get('body', '{}'))
@@ -36,20 +54,11 @@ def lambda_handler(event, context):
         input_files = body.get('files', [])
         parameters = body.get('parameters', {})
         
-        print(f"Input files: {input_files}")
-        print(f"Parameters: {parameters}")
+        logger.info(f"Input files: {input_files}")
+        logger.info(f"Parameters: {parameters}")
         
         if not input_files:
-            return {
-                'statusCode': 400,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({
-                    'error': 'No input files provided'
-                })
-            }
+            return cors_response(400, {'error': 'No input files provided'})
         
         # Generate a unique job ID
         job_id = str(uuid.uuid4())
@@ -79,8 +88,10 @@ def lambda_handler(event, context):
             # If there are running jobs, queue this job
             status = 'QUEUED'
             position = len(running_jobs_with_batch)
+            logger.info(f"Job queued at position {position}")
         else:
             # No running jobs, submit to AWS Batch immediately
+            logger.info("Submitting job to AWS Batch")
             batch_job = batch.submit_job(
                 jobName=f'optimo-job-{job_id}',
                 jobQueue=JOB_QUEUE,
@@ -99,6 +110,7 @@ def lambda_handler(event, context):
                 }
             )
             batch_job_id = batch_job['jobId']
+            logger.info(f"AWS Batch job submitted with ID: {batch_job_id}")
         
         # Store job information in DynamoDB
         item = {
@@ -116,35 +128,33 @@ def lambda_handler(event, context):
         if parameters:
             item['parameters'] = parameters
         
-        print(f"Saving item to DynamoDB: {json.dumps(item, cls=DecimalEncoder)}")
+        logger.info(f"Saving item to DynamoDB: {json.dumps(item, cls=DecimalEncoder)}")
         table.put_item(Item=item)
         
         # Return job ID to client
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({
-                'jobId': job_id,
-                'status': status,
-                'position': position,
-                'submittedAt': timestamp
-            })
-        }
+        return cors_response(200, {
+            'jobId': job_id,
+            'status': status,
+            'position': position,
+            'submittedAt': timestamp
+        })
         
     except Exception as e:
-        print(f"Error: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return {
-            'statusCode': 500,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({
-                'error': str(e)
-            })
-        }
+        logger.error(f"Error processing request: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return cors_response(500, {'error': str(e)})
+
+def cors_response(status_code, body_dict):
+    """
+    Helper function to create a response with CORS headers
+    """
+    return {
+        'statusCode': status_code,
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': 'https://brettenf-uw.github.io',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+        },
+        'body': json.dumps(body_dict, cls=DecimalEncoder)
+    }
