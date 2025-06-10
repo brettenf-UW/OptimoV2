@@ -140,7 +140,9 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
         prevJobs.map(j => j.id === id ? job : j)
       );
 
-      if (job.status === 'completed' && onJobComplete) {
+      // Check for both lowercase 'completed' and uppercase 'COMPLETED' status
+      if ((job.status === 'completed' || job.status === 'COMPLETED') && onJobComplete) {
+        console.log('Job completed, triggering results display:', job);
         onJobComplete(job);
       }
     } catch (err: any) {
@@ -184,6 +186,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
       case 'running':
         return <PlayArrowIcon color="primary" />;
       case 'completed':
+      case 'COMPLETED':
         return <CheckCircleIcon color="success" />;
       case 'failed':
         return <ErrorIcon color="error" />;
@@ -197,6 +200,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
       case 'running':
         return 'primary';
       case 'completed':
+      case 'COMPLETED':
         return 'success';
       case 'failed':
         return 'error';
@@ -300,7 +304,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
                     </>
                   )}
 
-                  {selectedJob.status === 'completed' && (
+                  {(selectedJob.status === 'completed' || selectedJob.status === 'COMPLETED') && (
                     <Alert severity="success" sx={{ mt: 2 }}>
                       Optimization completed successfully! All {iterations.length} iterations finished.
                     </Alert>

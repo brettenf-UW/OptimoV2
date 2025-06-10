@@ -9,7 +9,7 @@ export interface FileUpload {
 export interface Job {
   id: string;
   jobId?: string; // Optional jobId for backend compatibility
-  status: 'pending' | 'running' | 'completed' | 'failed';
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'COMPLETED'; // Added 'COMPLETED' for backend compatibility
   createdAt: Date;
   updatedAt: Date;
   submittedAt?: Date; // Optional submittedAt for backend compatibility

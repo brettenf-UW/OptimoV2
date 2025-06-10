@@ -11,6 +11,7 @@ import {
   useTheme,
   alpha,
   Stack,
+  Alert,
 } from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
@@ -168,36 +169,72 @@ export const Results: React.FC<ResultsProps> = ({ job }) => {
   const [utilizationData, setUtilizationData] = useState<any[]>([]);
   const [teacherData, setTeacherData] = useState<any[]>([]);
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [downloadUrls, setDownloadUrls] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate loading data
-    setTimeout(() => {
-      setUtilizationData(generateUtilizationDistribution());
-      setTeacherData(generateBellCurveData());
-      setLoading(false);
-    }, 1000);
-  }, []);
+    // Load actual results data from API
+    const fetchResults = async () => {
+      setLoading(true);
+      try {
+        console.log('Fetching results for job:', job);
+        // Ensure we have a valid job ID
+        const jobId = job.id || job.jobId;
+        if (!jobId) {
+          throw new Error('No job ID available');
+        }
+        const results = await api.getJobResults(jobId);
+        console.log('Received results:', results);
+        
+        if (results && results.downloadUrls) {
+          setDownloadUrls(results.downloadUrls);
+        } else {
+          setError('No download URLs found in results');
+        }
+        
+        // Still generate mock data for charts
+        setUtilizationData(generateUtilizationDistribution());
+        setTeacherData(generateBellCurveData());
+      } catch (err) {
+        console.error('Error fetching results:', err);
+        setError('Failed to load results. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchResults();
+  }, [job]);
 
   const handleDownload = async (type: string) => {
     setDownloading(type);
     try {
-      if (type === 'all') {
-        // Download all files as ZIP
+      // Use the actual download URLs from the API
+      let url;
+      
+      if (type === 'masterSchedule' && downloadUrls['Master_Schedule.csv']) {
+        url = downloadUrls['Master_Schedule.csv'];
+      } else if (type === 'studentAssignments' && downloadUrls['Student_Assignments.csv']) {
+        url = downloadUrls['Student_Assignments.csv'];
+      } else if (type === 'teacherSchedule' && downloadUrls['Teacher_Schedule.csv']) {
+        url = downloadUrls['Teacher_Schedule.csv'];
+      } else if (type === 'constraintViolations' && downloadUrls['Constraint_Violations.csv']) {
+        url = downloadUrls['Constraint_Violations.csv'];
+      } else if (type === 'all') {
+        // Download all files as ZIP - not implemented yet
         console.log('Downloading all files...');
+        return;
       } else {
-        // Download individual file
-        const blob = await api.downloadResult(job.id, type as any);
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${type}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        console.error('Download URL not found for type:', type);
+        setError(`Download URL not found for ${type}`);
+        return;
       }
+      
+      // Open the URL in a new tab
+      window.open(url, '_blank');
     } catch (error) {
       console.error('Download failed:', error);
+      setError('Failed to download file');
     } finally {
       setDownloading(null);
     }
@@ -260,6 +297,14 @@ export const Results: React.FC<ResultsProps> = ({ job }) => {
           </Grid>
         </Grid>
       </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ mb: 2 }}>
+        {error}
+      </Alert>
     );
   }
 
@@ -438,56 +483,66 @@ export const Results: React.FC<ResultsProps> = ({ job }) => {
           Download Results:
         </Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-          <Link
-            component="button"
-            variant="body2"
-            onClick={() => handleDownload('masterSchedule')}
-            sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-            underline="hover"
-          >
-            <CalendarIcon fontSize="small" /> Master Schedule
-          </Link>
-          <Typography variant="body2" color="text.secondary">•</Typography>
-          <Link
-            component="button"
-            variant="body2"
-            onClick={() => handleDownload('studentAssignments')}
-            sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-            underline="hover"
-          >
-            <AssignmentIcon fontSize="small" /> Student Assignments
-          </Link>
-          <Typography variant="body2" color="text.secondary">•</Typography>
-          <Link
-            component="button"
-            variant="body2"
-            onClick={() => handleDownload('teacherSchedule')}
-            sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-            underline="hover"
-          >
-            <PersonIcon fontSize="small" /> Teacher Schedules
-          </Link>
-          <Typography variant="body2" color="text.secondary">•</Typography>
-          <Link
-            component="button"
-            variant="body2"
-            onClick={() => handleDownload('constraintViolations')}
-            sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-            underline="hover"
-          >
-            <WarningIcon fontSize="small" /> Constraint Report
-          </Link>
-          <Typography variant="body2" color="text.secondary">•</Typography>
-          <Link
-            component="button"
-            variant="body2"
-            onClick={() => handleDownload('pdf')}
-            sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-            underline="hover"
-          >
-            <ArticleIcon fontSize="small" /> Full Report (PDF)
-          </Link>
-          <Typography variant="body2" color="text.secondary">•</Typography>
+          {downloadUrls['Master_Schedule.csv'] && (
+            <>
+              <Link
+                component="button"
+                variant="body2"
+                onClick={() => handleDownload('masterSchedule')}
+                sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                underline="hover"
+              >
+                <CalendarIcon fontSize="small" /> Master Schedule
+              </Link>
+              <Typography variant="body2" color="text.secondary">•</Typography>
+            </>
+          )}
+          
+          {downloadUrls['Student_Assignments.csv'] && (
+            <>
+              <Link
+                component="button"
+                variant="body2"
+                onClick={() => handleDownload('studentAssignments')}
+                sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                underline="hover"
+              >
+                <AssignmentIcon fontSize="small" /> Student Assignments
+              </Link>
+              <Typography variant="body2" color="text.secondary">•</Typography>
+            </>
+          )}
+          
+          {downloadUrls['Teacher_Schedule.csv'] && (
+            <>
+              <Link
+                component="button"
+                variant="body2"
+                onClick={() => handleDownload('teacherSchedule')}
+                sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                underline="hover"
+              >
+                <PersonIcon fontSize="small" /> Teacher Schedules
+              </Link>
+              <Typography variant="body2" color="text.secondary">•</Typography>
+            </>
+          )}
+          
+          {downloadUrls['Constraint_Violations.csv'] && (
+            <>
+              <Link
+                component="button"
+                variant="body2"
+                onClick={() => handleDownload('constraintViolations')}
+                sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                underline="hover"
+              >
+                <WarningIcon fontSize="small" /> Constraint Report
+              </Link>
+              <Typography variant="body2" color="text.secondary">•</Typography>
+            </>
+          )}
+          
           <Link
             component="button"
             variant="body2"

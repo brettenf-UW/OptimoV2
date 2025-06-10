@@ -75,24 +75,23 @@ class ApiService {
 
   // Get job status
   async getJobStatus(jobId: string): Promise<Job> {
+    console.log('Getting status for job:', jobId);
     const response = await this.api.get<Job>(`/jobs/${jobId}/status`);
+    console.log('Job status response:', response.data);
     return response.data;
   }
 
   // Get job results
   async getJobResults(jobId: string): Promise<{downloadUrls: Record<string, string>}> {
-    const response = await this.api.get<{downloadUrls: Record<string, string>}>(`/jobs/${jobId}/results`);
-    return response.data;
-  }
-
-  // Download result file using presigned URL - returns the Blob directly
-  async downloadResult(url: string, fileName: string): Promise<Blob> {
-    const response = await axios.get(url, {
-      responseType: 'blob'
-    });
-    
-    // Return the blob directly
-    return new Blob([response.data]);
+    console.log('Getting results for job:', jobId);
+    try {
+      const response = await this.api.get<{downloadUrls: Record<string, string>}>(`/jobs/${jobId}/results`);
+      console.log('Job results response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting job results:', error);
+      throw error;
+    }
   }
   
   // Cancel job
