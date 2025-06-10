@@ -32,13 +32,7 @@ class ApiService {
       return [];
     }
     
-    // Ensure maxIterations is set from parameters if available
-    return jobs.map(job => {
-      if (job.parameters && job.parameters.maxIterations && !job.maxIterations) {
-        job.maxIterations = job.parameters.maxIterations;
-      }
-      return job;
-    });
+    return jobs;
   }
 
   // Get presigned URL for file upload
@@ -94,12 +88,6 @@ class ApiService {
     console.log('Getting status for job:', jobId);
     const response = await this.api.get<Job>(`/jobs/${jobId}/status`);
     console.log('Job status response:', response.data);
-    
-    // Ensure maxIterations is set from parameters if available
-    if (response.data && response.data.parameters && response.data.parameters.maxIterations) {
-      response.data.maxIterations = response.data.parameters.maxIterations;
-    }
-    
     return response.data;
   }
 
