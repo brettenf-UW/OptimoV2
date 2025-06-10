@@ -269,7 +269,7 @@ export const Results: React.FC<ResultsProps> = ({ job }) => {
     return () => {
       isMounted = false;
     };
-  }, [job.id, job.jobId]); // Only re-fetch if job ID changes
+  }, [job.id]); // Only re-fetch if job ID changes
 
   // Helper function to transform utilization data from API
   const transformUtilizationData = (apiData: any[]) => {
