@@ -70,7 +70,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({
     if (!job.maxIterations) job.maxIterations = 3; // Default to 3 iterations
     
     // For completed jobs, set all iterations to completed
-    if (job.status === 'completed' || job.status === 'COMPLETED') {
+    if (job.status === 'SUCCEEDED') {
       const completedIterations: IterationProgress[] = [];
       for (let i = 0; i < job.maxIterations; i++) {
         completedIterations.push({
