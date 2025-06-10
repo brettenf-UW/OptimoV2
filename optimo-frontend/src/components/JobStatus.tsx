@@ -193,7 +193,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({
 
   // Add a small delay when refreshTrigger changes to ensure the new job is in the database
   useEffect(() => {
-    if (refreshTrigger > 0) {
+    if (refreshTrigger && refreshTrigger > 0) {
       const timer = setTimeout(() => {
         fetchJobs();
       }, 1000); // 1 second delay
