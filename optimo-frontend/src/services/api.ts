@@ -82,10 +82,15 @@ class ApiService {
   }
 
   // Get job results
-  async getJobResults(jobId: string): Promise<{downloadUrls: Record<string, string>}> {
+  async getJobResults(jobId: string): Promise<{
+    downloadUrls: Record<string, string>,
+    metrics?: any,
+    chartData?: any,
+    optimizationSummary?: string[]
+  }> {
     console.log('Getting results for job:', jobId);
     try {
-      const response = await this.api.get<{downloadUrls: Record<string, string>}>(`/jobs/${jobId}/results`);
+      const response = await this.api.get(`/jobs/${jobId}/results`);
       console.log('Job results response:', response.data);
       return response.data;
     } catch (error) {

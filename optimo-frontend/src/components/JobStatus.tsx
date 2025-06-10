@@ -52,7 +52,22 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
 
   // Generate iteration progress based on job progress
   const updateIterationProgress = (job: Job) => {
-    if (!job.maxIterations) job.maxIterations = 5; // Default to 5 iterations
+    if (!job.maxIterations) job.maxIterations = 3; // Default to 3 iterations
+    
+    // For completed jobs, set all iterations to completed
+    if (job.status === 'completed' || job.status === 'COMPLETED') {
+      const completedIterations: IterationProgress[] = [];
+      for (let i = 0; i < job.maxIterations; i++) {
+        completedIterations.push({
+          iteration: i,
+          status: 'completed',
+          step: 'Completed',
+          details: `Iteration ${i} completed successfully`
+        });
+      }
+      setIterations(completedIterations);
+      return;
+    }
     
     const progressPerIteration = 100 / job.maxIterations;
     const currentIteration = Math.floor(job.progress / progressPerIteration);
