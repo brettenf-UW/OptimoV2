@@ -18,6 +18,7 @@ export interface Job {
   error?: string;
   results?: JobResults;
   maxIterations?: number;
+  parameters?: any; // Parameters from backend including maxIterations
 }
 
 export interface JobResults {

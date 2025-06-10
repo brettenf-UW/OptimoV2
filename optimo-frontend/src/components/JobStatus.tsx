@@ -130,9 +130,12 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
       const fetchedJobs = await api.getJobs();
       // Ensure fetchedJobs is an array
       const jobsArray = Array.isArray(fetchedJobs) ? fetchedJobs : [];
-      setJobs(jobsArray.sort((a, b) => 
+      // Sort by creation date and take only the last 3 jobs
+      const sortedJobs = jobsArray.sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ));
+      );
+      // Only show the 3 most recent jobs
+      setJobs(sortedJobs.slice(0, 3));
     } catch (err: any) {
       console.error('Failed to fetch jobs:', err);
       setError('Failed to fetch jobs');
@@ -321,7 +324,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
 
                   {(selectedJob.status === 'completed' || selectedJob.status === 'COMPLETED') && (
                     <Alert severity="success" sx={{ mt: 2 }}>
-                      Optimization completed successfully! All {iterations.length} iterations finished.
+                      Optimization completed successfully! All {selectedJob.maxIterations || 3} iterations finished.
                     </Alert>
                   )}
 
@@ -365,14 +368,26 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
                   key={jobId}
                   button
                   selected={selectedJob?.id === jobId}
-                  onClick={() => setSelectedJob({...job, id: jobId})}
+                  onClick={() => {
+                    setSelectedJob({...job, id: jobId});
+                    // If job is completed, trigger the results view
+                    if ((jobStatus === 'completed' || jobStatus === 'COMPLETED') && onJobComplete) {
+                      onJobComplete({...job, id: jobId});
+                    }
+                  }}
                 >
                   <ListItemText
-                    primary={`Job ${jobId.substring(0, Math.min(8, jobId.length))}`}
+                    primary={new Date(jobCreatedAt).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit'
+                    })}
                     secondary={
                       <>
-                        Status: {jobStatus} • Created: {jobCreatedAt ? new Date(jobCreatedAt).toLocaleString() : 'N/A'}
-                        {jobStatus === 'running' && job.progress !== undefined && ` • Progress: ${job.progress}%`}
+                        Status: {jobStatus} • {jobStatus === 'running' && job.progress !== undefined && `Progress: ${job.progress}%`}
+                        {(jobStatus === 'completed' || jobStatus === 'COMPLETED') && 'Click to view results'}
                       </>
                     }
                   />

@@ -21,14 +21,24 @@ class ApiService {
   async getJobs(): Promise<Job[]> {
     const response = await this.api.get('/jobs');
     // Handle different response formats from Lambda
+    let jobs: Job[] = [];
+    
     if (Array.isArray(response.data)) {
-      return response.data;
+      jobs = response.data;
     } else if (response.data && response.data.jobs) {
-      return response.data.jobs;
+      jobs = response.data.jobs;
     } else {
       console.warn('Unexpected response format from /jobs endpoint:', response.data);
       return [];
     }
+    
+    // Ensure maxIterations is set from parameters if available
+    return jobs.map(job => {
+      if (job.parameters && job.parameters.maxIterations && !job.maxIterations) {
+        job.maxIterations = job.parameters.maxIterations;
+      }
+      return job;
+    });
   }
 
   // Get presigned URL for file upload
@@ -78,6 +88,12 @@ class ApiService {
     console.log('Getting status for job:', jobId);
     const response = await this.api.get<Job>(`/jobs/${jobId}/status`);
     console.log('Job status response:', response.data);
+    
+    // Ensure maxIterations is set from parameters if available
+    if (response.data && response.data.parameters && response.data.parameters.maxIterations) {
+      response.data.maxIterations = response.data.parameters.maxIterations;
+    }
+    
     return response.data;
   }
 
