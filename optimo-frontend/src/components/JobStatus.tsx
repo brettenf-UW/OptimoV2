@@ -194,7 +194,12 @@ export const JobStatus: React.FC<JobStatusProps> = ({
   }, [jobId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (selectedJob && ['pending', 'running'].includes(selectedJob.status)) {
+    if (selectedJob && (
+      selectedJob.status === 'pending' || selectedJob.status === 'running' ||
+      selectedJob.status === 'PENDING' || selectedJob.status === 'RUNNING' ||
+      selectedJob.status === 'SUBMITTED' || selectedJob.status === 'RUNNABLE' ||
+      selectedJob.status === 'STARTING'
+    )) {
       const interval = setInterval(() => {
         fetchJobStatus(selectedJob.id);
       }, 2000); // Poll every 2 seconds for smoother updates
@@ -232,28 +237,46 @@ export const JobStatus: React.FC<JobStatusProps> = ({
   const getStatusIcon = (status: Job['status']) => {
     switch (status) {
       case 'pending':
+      case 'PENDING':
+      case 'SUBMITTED':
+      case 'RUNNABLE':
+      case 'STARTING':
         return <ScheduleIcon color="action" />;
       case 'running':
+      case 'RUNNING':
         return <PlayArrowIcon color="primary" />;
       case 'completed':
       case 'COMPLETED':
+      case 'SUCCEEDED':
         return <CheckCircleIcon color="success" />;
       case 'failed':
+      case 'FAILED':
         return <ErrorIcon color="error" />;
+      default:
+        return <ScheduleIcon color="action" />;
     }
   };
 
-  const getStatusColor = (status: Job['status']) => {
+  const getStatusColor = (status: Job['status']): "default" | "primary" | "success" | "error" => {
     switch (status) {
       case 'pending':
+      case 'PENDING':
+      case 'SUBMITTED':
+      case 'RUNNABLE':
+      case 'STARTING':
         return 'default';
       case 'running':
+      case 'RUNNING':
         return 'primary';
       case 'completed':
       case 'COMPLETED':
+      case 'SUCCEEDED':
         return 'success';
       case 'failed':
+      case 'FAILED':
         return 'error';
+      default:
+        return 'default';
     }
   };
 
@@ -305,7 +328,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({
                     />
                   </Box>
 
-                  {selectedJob.status === 'running' && (
+                  {(selectedJob.status === 'running' || selectedJob.status === 'RUNNING') && (
                     <>
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="subtitle2" gutterBottom>
@@ -367,7 +390,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({
                     </Alert>
                   )}
 
-                  {selectedJob.status === 'running' && (
+                  {(selectedJob.status === 'running' || selectedJob.status === 'RUNNING') && (
                     <Box sx={{ mt: 2 }}>
                       <Button
                         variant="outlined"

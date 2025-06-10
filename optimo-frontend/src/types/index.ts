@@ -9,7 +9,9 @@ export interface FileUpload {
 export interface Job {
   id: string;
   jobId?: string; // Optional jobId for backend compatibility
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'COMPLETED'; // Added 'COMPLETED' for backend compatibility
+  status: 'pending' | 'running' | 'completed' | 'failed' | 
+          'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 
+          'SUBMITTED' | 'RUNNABLE' | 'STARTING' | 'SUCCEEDED'; // All AWS Batch statuses
   createdAt: Date;
   updatedAt: Date;
   submittedAt?: Date; // Optional submittedAt for backend compatibility
