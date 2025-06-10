@@ -71,6 +71,8 @@ function App() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFiles>({});
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [completedJob, setCompletedJob] = useState<Job | null>(null);
+  const [selectedHistoryJob, setSelectedHistoryJob] = useState<Job | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -85,16 +87,28 @@ function App() {
     setUploadedFiles({});
     setCurrentJobId(null);
     setCompletedJob(null);
+    setSelectedHistoryJob(null);
   };
 
   const handleJobSubmitted = (jobId: string) => {
     setCurrentJobId(jobId);
+    setRefreshTrigger(prev => prev + 1); // Trigger history refresh
     handleNext();
   };
 
   const handleJobComplete = (job: Job) => {
     setCompletedJob(job);
-    handleNext();
+    if (job.id === currentJobId) {
+      handleNext();
+    }
+  };
+
+  const handleHistoryJobSelect = (job: Job | null) => {
+    setSelectedHistoryJob(job);
+    if (job && (job.status === 'completed' || job.status === 'COMPLETED')) {
+      setCompletedJob(job);
+      setActiveStep(3); // Jump to results step
+    }
   };
 
   const allRequiredFilesUploaded =
@@ -159,7 +173,21 @@ function App() {
                             />
                           )}
                           {index === 3 && completedJob && (
-                            <Results job={completedJob} />
+                            <>
+                              <Results job={completedJob} />
+                              {selectedHistoryJob && (
+                                <Box sx={{ mt: 3 }}>
+                                  <Button 
+                                    variant="contained" 
+                                    color="primary"
+                                    onClick={handleReset}
+                                    size="large"
+                                  >
+                                    Start New Optimization
+                                  </Button>
+                                </Box>
+                              )}
+                            </>
                           )}
                         </Box>
 
@@ -224,6 +252,9 @@ function App() {
                 <JobStatus 
                   showCurrentJob={false}
                   onJobComplete={handleJobComplete}
+                  onJobSelect={handleHistoryJobSelect}
+                  selectedJobId={selectedHistoryJob?.id}
+                  refreshTrigger={refreshTrigger}
                 />
               </Paper>
             </Grid>
