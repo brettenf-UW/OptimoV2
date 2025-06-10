@@ -34,6 +34,8 @@ import api from '../services/api';
 interface JobStatusProps {
   jobId?: string;
   onJobComplete?: (job: Job) => void;
+  showJobsList?: boolean;
+  showCurrentJob?: boolean;
 }
 
 interface IterationProgress {
@@ -43,7 +45,12 @@ interface IterationProgress {
   details?: string;
 }
 
-export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) => {
+export const JobStatus: React.FC<JobStatusProps> = ({ 
+  jobId, 
+  onJobComplete,
+  showJobsList = true,
+  showCurrentJob = true
+}) => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(false);
@@ -238,24 +245,25 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
 
   return (
     <Box>
-      <Card>
-        <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h5" component="h2">
-              Job Status
-            </Typography>
-            <IconButton onClick={fetchJobs} disabled={loading}>
-              <RefreshIcon />
-            </IconButton>
-          </Box>
+      {showCurrentJob && jobId && (
+        <Card>
+          <CardContent>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h5" component="h2">
+                Job Progress
+              </Typography>
+              <IconButton onClick={() => fetchJobStatus(jobId)} disabled={loading}>
+                <RefreshIcon />
+              </IconButton>
+            </Box>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            )}
 
-          {selectedJob && (
+            {selectedJob && selectedJob.id === jobId && (
             <>
               <Card sx={{ mb: 3, bgcolor: 'background.default' }}>
                 <CardContent>
@@ -349,14 +357,24 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
                   )}
                 </CardContent>
               </Card>
-              <Divider sx={{ my: 2 }} />
             </>
           )}
+          </CardContent>
+        </Card>
+      )}
 
-          <Typography variant="subtitle1" gutterBottom>
-            Recent Jobs
-          </Typography>
-          <List>
+      {showJobsList && (
+        <Card sx={{ mt: showCurrentJob && jobId ? 3 : 0 }}>
+          <CardContent>
+            {!showCurrentJob && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <IconButton onClick={fetchJobs} disabled={loading} size="small">
+                  <RefreshIcon />
+                </IconButton>
+              </Box>
+            )}
+
+            <List sx={{ py: 0 }}>
             {jobs.map((job, index) => {
               // Ensure job has required properties
               const jobId = job?.id || job?.jobId || `unknown-${index}`;
@@ -367,7 +385,6 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
                 <ListItem
                   key={jobId}
                   button
-                  selected={selectedJob?.id === jobId}
                   onClick={() => {
                     setSelectedJob({...job, id: jobId});
                     // If job is completed, trigger the results view
@@ -375,20 +392,37 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
                       onJobComplete({...job, id: jobId});
                     }
                   }}
+                  sx={{ 
+                    borderRadius: 1, 
+                    mb: 1,
+                    backgroundColor: index === 0 ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
+                    '&:hover': {
+                      backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                    }
+                  }}
                 >
                   <ListItemText
-                    primary={new Date(jobCreatedAt).toLocaleString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit'
-                    })}
+                    primary={
+                      <Typography variant="subtitle2" fontWeight={index === 0 ? 600 : 400}>
+                        {new Date(jobCreatedAt).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </Typography>
+                    }
                     secondary={
-                      <>
-                        Status: {jobStatus} • {jobStatus === 'running' && job.progress !== undefined && `Progress: ${job.progress}%`}
-                        {(jobStatus === 'completed' || jobStatus === 'COMPLETED') && 'Click to view results'}
-                      </>
+                      <Typography variant="body2" color="text.secondary">
+                        {jobStatus === 'running' && `In Progress • ${job.progress || 0}%`}
+                        {(jobStatus === 'completed' || jobStatus === 'COMPLETED') && 
+                          <span style={{ color: '#4caf50', fontWeight: 500 }}>
+                            ✓ Completed • Click to view results
+                          </span>
+                        }
+                        {jobStatus === 'failed' && <span style={{ color: '#f44336' }}>✗ Failed</span>}
+                        {jobStatus === 'pending' && 'Pending...'}
+                      </Typography>
                     }
                   />
                   <ListItemSecondaryAction>
@@ -399,13 +433,14 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
             })}
           </List>
 
-          {jobs.length === 0 && !loading && (
-            <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 3 }}>
-              No jobs found. Submit a new job to get started.
-            </Typography>
-          )}
-        </CardContent>
-      </Card>
+            {jobs.length === 0 && !loading && (
+              <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 3 }}>
+                No previous optimization runs found.
+              </Typography>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </Box>
   );
 };

@@ -14,6 +14,8 @@ import {
   StepContent,
   Button,
   Paper,
+  Grid,
+  Divider,
 } from '@mui/material';
 import { FileUpload } from './components/FileUpload';
 import { JobSubmission } from './components/JobSubmission';
@@ -114,80 +116,118 @@ function App() {
           </Toolbar>
         </AppBar>
 
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-          <Paper elevation={3} sx={{ p: 4 }}>
-            <Typography variant="h4" gutterBottom>
-              Class Schedule Optimizer
-            </Typography>
-            <Typography variant="body1" color="text.secondary" paragraph>
-              Upload your scheduling data and let OptimoV2 create an optimized class schedule
-              that maximizes utilization while respecting all constraints.
-            </Typography>
+        <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+          <Grid container spacing={3}>
+            {/* Current Job Submission Section */}
+            <Grid item xs={12} lg={8}>
+              <Paper elevation={3} sx={{ p: 4 }}>
+                <Typography variant="h4" gutterBottom>
+                  Create New Optimization
+                </Typography>
+                <Typography variant="body1" color="text.secondary" paragraph>
+                  Upload your scheduling data and let OptimoV2 create an optimized class schedule
+                  that maximizes utilization while respecting all constraints.
+                </Typography>
 
-            <Stepper activeStep={activeStep} orientation="vertical" sx={{ mt: 4 }}>
-              {steps.map((step, index) => (
-                <Step key={step.label}>
-                  <StepLabel>{step.label}</StepLabel>
-                  <StepContent>
-                    <Typography variant="body2" color="text.secondary" paragraph>
-                      {step.description}
-                    </Typography>
+                <Stepper activeStep={activeStep} orientation="vertical" sx={{ mt: 4 }}>
+                  {steps.map((step, index) => (
+                    <Step key={step.label}>
+                      <StepLabel>{step.label}</StepLabel>
+                      <StepContent>
+                        <Typography variant="body2" color="text.secondary" paragraph>
+                          {step.description}
+                        </Typography>
 
-                    <Box sx={{ mb: 2 }}>
-                      {index === 0 && (
-                        <FileUpload
-                          uploadedFiles={uploadedFiles}
-                          onFilesChange={setUploadedFiles}
-                        />
-                      )}
-                      {index === 1 && (
-                        <JobSubmission
-                          uploadedFiles={uploadedFiles}
-                          onJobSubmitted={handleJobSubmitted}
-                        />
-                      )}
-                      {index === 2 && (
-                        <JobStatus
-                          jobId={currentJobId || undefined}
-                          onJobComplete={handleJobComplete}
-                        />
-                      )}
-                      {index === 3 && completedJob && (
-                        <Results job={completedJob} />
-                      )}
-                    </Box>
+                        <Box sx={{ mb: 2 }}>
+                          {index === 0 && (
+                            <FileUpload
+                              uploadedFiles={uploadedFiles}
+                              onFilesChange={setUploadedFiles}
+                            />
+                          )}
+                          {index === 1 && (
+                            <JobSubmission
+                              uploadedFiles={uploadedFiles}
+                              onJobSubmitted={handleJobSubmitted}
+                            />
+                          )}
+                          {index === 2 && currentJobId && (
+                            <JobStatus
+                              jobId={currentJobId}
+                              onJobComplete={handleJobComplete}
+                              showJobsList={false}
+                            />
+                          )}
+                          {index === 3 && completedJob && (
+                            <Results job={completedJob} />
+                          )}
+                        </Box>
 
-                    <Box sx={{ mb: 2 }}>
-                      {index > 0 && (
-                        <Button
-                          variant="outlined"
-                          onClick={handleBack}
-                          sx={{ mt: 1, mr: 1 }}
-                        >
-                          Back
-                        </Button>
-                      )}
-                      {index === 0 && (
-                        <Button
-                          variant="contained"
-                          onClick={handleNext}
-                          sx={{ mt: 1, mr: 1 }}
-                          disabled={!allRequiredFilesUploaded}
-                        >
-                          Continue
-                        </Button>
-                      )}
-                      {index === steps.length - 1 && (
-                        <Button onClick={handleReset} sx={{ mt: 1, mr: 1 }}>
-                          Start New Optimization
-                        </Button>
-                      )}
-                    </Box>
-                  </StepContent>
-                </Step>
-              ))}
-            </Stepper>
-          </Paper>
+                        <Box sx={{ mb: 2 }}>
+                          {index > 0 && (
+                            <Button
+                              variant="outlined"
+                              onClick={handleBack}
+                              sx={{ mt: 1, mr: 1 }}
+                            >
+                              Back
+                            </Button>
+                          )}
+                          {index === 0 && (
+                            <Button
+                              variant="contained"
+                              onClick={handleNext}
+                              sx={{ mt: 1, mr: 1 }}
+                              disabled={!allRequiredFilesUploaded}
+                            >
+                              Continue
+                            </Button>
+                          )}
+                          {index === steps.length - 1 && (
+                            <Button onClick={handleReset} sx={{ mt: 1, mr: 1 }}>
+                              Start New Optimization
+                            </Button>
+                          )}
+                        </Box>
+                      </StepContent>
+                    </Step>
+                  ))}
+                </Stepper>
+              </Paper>
+            </Grid>
+
+            {/* Job History Section */}
+            <Grid item xs={12} lg={4}>
+              <Paper 
+                elevation={3} 
+                sx={{ 
+                  p: 3, 
+                  backgroundColor: '#f8f9fa',
+                  border: '1px solid #e9ecef'
+                }}
+              >
+                <Typography 
+                  variant="h5" 
+                  gutterBottom 
+                  sx={{ 
+                    mb: 3,
+                    pb: 2,
+                    borderBottom: '2px solid #dee2e6'
+                  }}
+                >
+                  Recent Job History
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  View and download results from your last 3 optimization runs
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+                <JobStatus 
+                  showCurrentJob={false}
+                  onJobComplete={handleJobComplete}
+                />
+              </Paper>
+            </Grid>
+          </Grid>
         </Container>
       </Box>
     </ThemeProvider>

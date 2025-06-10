@@ -92,21 +92,14 @@ def lambda_handler(event, context):
         else:
             # No running jobs, submit to AWS Batch immediately
             logger.info("Submitting job to AWS Batch")
+            logger.info(f"Using job definition: {JOB_DEFINITION}")
             batch_job = batch.submit_job(
                 jobName=f'optimo-job-{job_id}',
                 jobQueue=JOB_QUEUE,
-                jobDefinition='optimo-job-updated',
-                containerOverrides={
-                    'environment': [
-                        {
-                            'name': 'jobId',
-                            'value': job_id
-                        },
-                        {
-                            'name': 'inputFiles',
-                            'value': ','.join(input_files)
-                        }
-                    ]
+                jobDefinition=JOB_DEFINITION,
+                parameters={
+                    'jobId': job_id,
+                    'inputFiles': ','.join(input_files)
                 }
             )
             batch_job_id = batch_job['jobId']
