@@ -197,11 +197,7 @@ export const Results: React.FC<ResultsProps> = ({ job }) => {
       setLoading(true);
       try {
         console.log('Fetching results for job:', job);
-        // Ensure we have a valid job ID
-        const jobId = job.id || job.jobId;
-        if (!jobId) {
-          throw new Error('No job ID available');
-        }
+        const jobId = job.id;
         
         // Get results from API
         const results = await api.getJobResults(jobId);

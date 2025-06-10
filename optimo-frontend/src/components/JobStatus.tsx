@@ -524,7 +524,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({
                             default:
                               return (
                                 <Typography variant="body2" color="text.secondary" component="span">
-                                  {getStatusDisplay(jobStatus as BatchStatus)}
+                                  {getStatusDisplay(jobStatus)}
                                 </Typography>
                               );
                           }
