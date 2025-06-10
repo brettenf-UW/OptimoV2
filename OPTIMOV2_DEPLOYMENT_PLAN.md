@@ -193,7 +193,7 @@ Created a configuration file at `optimo-frontend/src/config.ts`:
 // src/config.ts
 const config = {
   api: {
-    baseUrl: process.env.REACT_APP_API_URL || "https://ppwbzsy1bh.execute-api.us-west-2.amazonaws.com/prod"
+    baseUrl: process.env.REACT_APP_API_URL || "https://3dbrbfl8f3.execute-api.us-west-2.amazonaws.com/prod"
   },
   buckets: {
     input: "optimo-input-files",
@@ -274,7 +274,7 @@ To build and deploy the frontend with AWS integration:
 
 1. Ensure the environment variables are set in `.env`:
    ```
-   REACT_APP_API_URL=https://ppwbzsy1bh.execute-api.us-west-2.amazonaws.com/prod
+   REACT_APP_API_URL=https://3dbrbfl8f3.execute-api.us-west-2.amazonaws.com/prod
    ```
 
 2. Navigate to the frontend directory:

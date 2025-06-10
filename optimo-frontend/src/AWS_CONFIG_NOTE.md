@@ -22,7 +22,7 @@ In a production environment, you should:
        output: process.env.REACT_APP_OUTPUT_BUCKET || "optimo-output-files"
      },
      api: {
-       baseUrl: process.env.REACT_APP_API_BASE_URL || "https://ppwbzsy1bh.execute-api.us-west-2.amazonaws.com/prod"
+       baseUrl: process.env.REACT_APP_API_BASE_URL || "https://3dbrbfl8f3.execute-api.us-west-2.amazonaws.com/prod"
      }
    };
    ```

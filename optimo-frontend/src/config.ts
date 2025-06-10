@@ -1,7 +1,7 @@
 // src/config.ts
 const config = {
   api: {
-    baseUrl: process.env.REACT_APP_API_URL || "https://ppwbzsy1bh.execute-api.us-west-2.amazonaws.com/prod"
+    baseUrl: process.env.REACT_APP_API_URL || "https://3dbrbfl8f3.execute-api.us-west-2.amazonaws.com/prod"
   },
   buckets: {
     input: "optimo-input-files",
