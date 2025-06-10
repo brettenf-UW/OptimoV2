@@ -8,9 +8,11 @@ export interface FileUpload {
 
 export interface Job {
   id: string;
+  jobId?: string; // Optional jobId for backend compatibility
   status: 'pending' | 'running' | 'completed' | 'failed';
   createdAt: Date;
   updatedAt: Date;
+  submittedAt?: Date; // Optional submittedAt for backend compatibility
   progress: number;
   currentStep?: string;
   error?: string;

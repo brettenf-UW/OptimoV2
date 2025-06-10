@@ -15,7 +15,6 @@ import {
   Button,
   Divider,
   Paper,
-  Grid,
   Stepper,
   Step,
   StepLabel,
@@ -114,11 +113,15 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
     setError(null);
     try {
       const fetchedJobs = await api.getJobs();
-      setJobs(fetchedJobs.sort((a, b) => 
+      // Ensure fetchedJobs is an array
+      const jobsArray = Array.isArray(fetchedJobs) ? fetchedJobs : [];
+      setJobs(jobsArray.sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       ));
     } catch (err: any) {
+      console.error('Failed to fetch jobs:', err);
       setError('Failed to fetch jobs');
+      setJobs([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -153,7 +156,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
     if (jobId) {
       fetchJobStatus(jobId);
     }
-  }, [jobId]);
+  }, [jobId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (selectedJob && ['pending', 'running'].includes(selectedJob.status)) {
@@ -163,7 +166,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
 
       return () => clearInterval(interval);
     }
-  }, [selectedJob]);
+  }, [selectedJob]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCancelJob = async (id: string) => {
     try {
@@ -332,27 +335,34 @@ export const JobStatus: React.FC<JobStatusProps> = ({ jobId, onJobComplete }) =>
             Recent Jobs
           </Typography>
           <List>
-            {jobs.map((job) => (
-              <ListItem
-                key={job.id}
-                button
-                selected={selectedJob?.id === job.id}
-                onClick={() => setSelectedJob(job)}
-              >
-                <ListItemText
-                  primary={`Job ${job.id.substring(0, 8)}`}
-                  secondary={
-                    <>
-                      Status: {job.status} • Created: {new Date(job.createdAt).toLocaleString()}
-                      {job.status === 'running' && ` • Progress: ${job.progress}%`}
-                    </>
-                  }
-                />
-                <ListItemSecondaryAction>
-                  {getStatusIcon(job.status)}
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
+            {jobs.map((job, index) => {
+              // Ensure job has required properties
+              const jobId = job?.id || job?.jobId || `unknown-${index}`;
+              const jobStatus = job?.status || 'unknown';
+              const jobCreatedAt = job?.createdAt || job?.submittedAt || new Date();
+              
+              return (
+                <ListItem
+                  key={jobId}
+                  button
+                  selected={selectedJob?.id === jobId}
+                  onClick={() => setSelectedJob({...job, id: jobId})}
+                >
+                  <ListItemText
+                    primary={`Job ${jobId.substring(0, Math.min(8, jobId.length))}`}
+                    secondary={
+                      <>
+                        Status: {jobStatus} • Created: {jobCreatedAt ? new Date(jobCreatedAt).toLocaleString() : 'N/A'}
+                        {jobStatus === 'running' && job.progress !== undefined && ` • Progress: ${job.progress}%`}
+                      </>
+                    }
+                  />
+                  <ListItemSecondaryAction>
+                    {getStatusIcon(jobStatus)}
+                  </ListItemSecondaryAction>
+                </ListItem>
+              );
+            })}
           </List>
 
           {jobs.length === 0 && !loading && (

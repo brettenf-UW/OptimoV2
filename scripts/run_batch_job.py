@@ -16,6 +16,7 @@ logger = logging.getLogger('optimo-batch')
 s3 = boto3.client('s3')
 dynamodb = boto3.resource('dynamodb')
 secretsmanager = boto3.client('secretsmanager')
+lambda_client = boto3.client('lambda')
 
 # Get environment variables
 INPUT_BUCKET = os.environ.get('S3_INPUT_BUCKET', 'optimo-input-files')
@@ -23,6 +24,23 @@ OUTPUT_BUCKET = os.environ.get('S3_OUTPUT_BUCKET', 'optimo-output-files')
 DYNAMODB_TABLE = os.environ.get('DYNAMODB_TABLE', 'optimo-jobs')
 AWS_REGION = os.environ.get('AWS_REGION', 'us-west-2')
 LICENSE_SECRET_NAME = os.environ.get('LICENSE_SECRET_NAME', 'optimo/gurobi-license')
+JOB_COMPLETION_HANDLER = os.environ.get('JOB_COMPLETION_HANDLER', 'optimo-job-completion-handler')
+
+def notify_job_completion(job_id, status):
+    """Notify the job completion handler that the job has finished"""
+    try:
+        logger.info(f"Notifying job completion handler for job {job_id} with status {status}")
+        lambda_client.invoke(
+            FunctionName=JOB_COMPLETION_HANDLER,
+            InvocationType='Event',  # Asynchronous invocation
+            Payload=json.dumps({
+                'jobId': job_id,
+                'status': status
+            })
+        )
+        logger.info(f"Successfully notified completion handler for job {job_id}")
+    except Exception as e:
+        logger.error(f"Failed to notify completion handler: {str(e)}")
 
 def get_gurobi_license():
     """Retrieve Gurobi license from AWS Secrets Manager and save to file"""
@@ -172,12 +190,17 @@ def main():
         # Update job status with results
         update_job_status(job_id, "COMPLETED", json.dumps({"outputFiles": output_keys}))
         
+        # Notify job completion handler
+        notify_job_completion(job_id, "COMPLETED")
+        
         logger.info(f"Job {job_id} completed successfully")
         
     except Exception as e:
         logger.error(f"Job failed: {str(e)}")
         if job_id:
             update_job_status(job_id, "FAILED", f"Job failed: {str(e)}")
+            # Notify job completion handler of failure
+            notify_job_completion(job_id, "FAILED")
         sys.exit(1)
 
 if __name__ == "__main__":

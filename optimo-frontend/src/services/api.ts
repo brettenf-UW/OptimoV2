@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { Job, JobSubmissionData, JobResults } from '../types';
+import { Job, JobSubmissionData } from '../types';
 import config from '../config';
 
 class ApiService {
@@ -19,8 +19,16 @@ class ApiService {
 
   // Get all jobs
   async getJobs(): Promise<Job[]> {
-    const response = await this.api.get<Job[]>('/jobs');
-    return response.data;
+    const response = await this.api.get('/jobs');
+    // Handle different response formats from Lambda
+    if (Array.isArray(response.data)) {
+      return response.data;
+    } else if (response.data && response.data.jobs) {
+      return response.data.jobs;
+    } else {
+      console.warn('Unexpected response format from /jobs endpoint:', response.data);
+      return [];
+    }
   }
 
   // Get presigned URL for file upload
@@ -93,4 +101,5 @@ class ApiService {
   }
 }
 
-export default new ApiService();
+const apiService = new ApiService();
+export default apiService;

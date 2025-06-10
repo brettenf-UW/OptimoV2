@@ -22,6 +22,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install boto3 for AWS SDK
+RUN pip install boto3
+
 COPY src/ ./src/
 COPY config/ ./config/
 COPY scripts/ ./scripts/

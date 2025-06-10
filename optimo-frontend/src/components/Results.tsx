@@ -10,8 +10,6 @@ import {
   Skeleton,
   useTheme,
   alpha,
-  Divider,
-  Chip,
   Stack,
 } from '@mui/material';
 import {
@@ -20,7 +18,6 @@ import {
   School as SchoolIcon,
   Speed as SpeedIcon,
   Warning as WarningIcon,
-  Download as DownloadIcon,
   CalendarMonth as CalendarIcon,
   Assignment as AssignmentIcon,
   Person as PersonIcon,
@@ -30,8 +27,6 @@ import {
 import {
   AreaChart,
   Area,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,

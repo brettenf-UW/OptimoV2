@@ -1,0 +1,10 @@
+# Add these lines to your existing Dockerfile
+
+# Install boto3 for AWS SDK
+RUN pip install boto3
+
+# Copy the updated batch job script
+COPY run_batch_job.py /app/
+
+# Make sure the script is executable
+RUN chmod +x /app/run_batch_job.py

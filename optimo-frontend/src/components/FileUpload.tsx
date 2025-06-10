@@ -9,7 +9,6 @@ import {
   ListItemIcon,
   ListItemText,
   IconButton,
-  LinearProgress,
   Alert,
 } from '@mui/material';
 import {
