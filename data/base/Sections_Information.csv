@@ -3,46 +3,165 @@ S001,Medical Career,T001,15,Special
 S002,Medical Career,T001,15,Special
 S003,Heroes Teach,T002,15,Special
 S004,Heroes Teach,T002,15,Special
-S005,Study Hall,T015,25,General
-S006,Study Hall,T016,25,General
-S007,Study Hall,T015,25,General
-S008,Study Hall,T016,25,General
-S009,Sports Med,T013,15,PE
-S010,Sports Med,T014,15,PE
-S011,Sports Med,T013,15,PE
-S012,Sports Med,T014,15,PE
-S013,Sports Med,T013,15,PE
-S014,PE,T014,35,PE
-S015,PE,T013,35,PE
-S016,Math 3,T005,25,Math
-S017,Math 3,T006,25,Math
-S018,Chemistry,T007,30,Science
-S019,Chemistry,T008,30,Science
-S020,US History,T011,25,Social Studies
-S021,US History,T012,25,Social Studies
-S022,Government,T011,25,Social Studies
-S023,Government,T012,25,Social Studies
-S024,English 9,T003,25,English
-S025,English 9,T004,25,English
-S026,English 10,T003,25,English
-S027,English 10,T004,25,English
-S028,Math 2,T005,25,Math
-S029,Math 2,T006,25,Math
-S030,World History,T011,25,Social Studies
-S031,World History,T012,25,Social Studies
-S032,English 11,T003,25,English
-S033,English 11,T004,25,English
-S034,Biology,T009,30,Science
-S035,Biology,T010,30,Science
-S036,Math 4,T005,25,Math
-S037,Math 4,T006,25,Math
-S038,English 12,T003,25,English
-S039,English 12,T004,25,English
-S040,Physics,T007,30,Science
-S041,Physics,T008,30,Science
-S042,Math 1,T005,25,Math
-S043,Math 1,T006,25,Math
-S044,Economics,T011,25,Social Studies
-S045,Economics,T012,25,Social Studies
-S046,AP Biology,T009,30,Science
-S047,AP Biology,T010,30,Science
+S005,Study Hall,T047,25,General
+S006,Study Hall,T048,25,General
+S007,Study Hall,T047,25,General
+S008,Study Hall,T048,25,General
+S009,Study Hall,T047,25,General
+S010,Study Hall,T048,25,General
+S011,Study Hall,T047,25,General
+S012,Study Hall,T048,25,General
+S013,Study Hall,T049,25,General
+S014,Study Hall,T049,25,General
+S015,Study Hall,T049,25,General
+S016,Study Hall,T049,25,General
+S017,Study Hall,T050,25,General
+S018,Study Hall,T050,25,General
+S019,Study Hall,T050,25,General
+S020,Study Hall,T050,25,General
+S021,Study Hall,T051,25,General
+S022,Study Hall,T051,25,General
+S023,Study Hall,T051,25,General
+S024,Study Hall,T051,25,General
+S025,Study Hall,T052,25,General
+S026,Study Hall,T052,25,General
+S027,Study Hall,T052,25,General
+S028,Study Hall,T052,25,General
+S029,Sports Med,T041,15,PE
+S030,Sports Med,T042,15,PE
+S031,Sports Med,T043,15,PE
+S032,Sports Med,T044,15,PE
+S033,Sports Med,T045,15,PE
+S034,Sports Med,T046,15,PE
+S035,Sports Med,T041,15,PE
+S036,Sports Med,T042,15,PE
+S037,Sports Med,T043,15,PE
+S038,Sports Med,T044,15,PE
+S039,Sports Med,T045,15,PE
+S040,Sports Med,T046,15,PE
+S041,Sports Med,T041,15,PE
+S042,Sports Med,T042,15,PE
+S043,Sports Med,T043,15,PE
+S044,Sports Med,T044,15,PE
+S045,Sports Med,T045,15,PE
+S046,Sports Med,T046,15,PE
+S047,Sports Med,T041,15,PE
+S048,Sports Med,T042,15,PE
+S049,Sports Med,T043,15,PE
+S050,PE,T044,35,PE
+S051,PE,T045,35,PE
+S052,PE,T046,35,PE
+S053,PE,T053,35,PE
+S054,PE,T053,35,PE
+S055,PE,T053,35,PE
+S056,PE,T053,35,PE
+S057,PE,T054,35,PE
+S058,PE,T054,35,PE
+S059,Math 1,T009,25,Math
+S060,Math 1,T010,25,Math
+S061,Math 1,T011,25,Math
+S062,Math 1,T012,25,Math
+S063,Math 1,T013,25,Math
+S064,Math 1,T014,25,Math
+S065,Math 1,T009,25,Math
+S066,Biology,T015,30,Science
+S067,Biology,T016,30,Science
+S068,Biology,T017,30,Science
+S069,Biology,T018,30,Science
+S070,Biology,T019,30,Science
+S071,Biology,T020,30,Science
+S072,US History,T035,25,Social Studies
+S073,US History,T036,25,Social Studies
+S074,US History,T037,25,Social Studies
+S075,US History,T038,25,Social Studies
+S076,US History,T039,25,Social Studies
+S077,US History,T040,25,Social Studies
+S078,US History,T035,25,Social Studies
+S079,AP Biology,T021,30,Science
+S080,AP Biology,T022,30,Science
+S081,AP Biology,T023,30,Science
+S082,AP Biology,T024,30,Science
+S083,AP Biology,T025,30,Science
+S084,AP Biology,T026,30,Science
+S085,Math 2,T010,25,Math
+S086,Math 2,T011,25,Math
+S087,Math 2,T012,25,Math
+S088,Math 2,T013,25,Math
+S089,Math 2,T014,25,Math
+S090,Math 2,T009,25,Math
+S091,Math 2,T010,25,Math
+S092,Chemistry,T027,30,Science
+S093,Chemistry,T028,30,Science
+S094,Chemistry,T029,30,Science
+S095,Chemistry,T030,30,Science
+S096,Chemistry,T031,30,Science
+S097,Chemistry,T032,30,Science
+S098,English 9,T003,25,English
+S099,English 9,T004,25,English
+S100,English 9,T005,25,English
+S101,English 9,T006,25,English
+S102,English 9,T007,25,English
+S103,English 9,T008,25,English
+S104,English 9,T003,25,English
+S105,Physics,T033,30,Science
+S106,Physics,T034,30,Science
+S107,Physics,T015,30,Science
+S108,Physics,T016,30,Science
+S109,Physics,T017,30,Science
+S110,Physics,T018,30,Science
+S111,English 11,T004,25,English
+S112,English 11,T005,25,English
+S113,English 11,T006,25,English
+S114,English 11,T007,25,English
+S115,English 11,T008,25,English
+S116,English 11,T003,25,English
+S117,English 11,T004,25,English
+S118,English 10,T005,25,English
+S119,English 10,T006,25,English
+S120,English 10,T007,25,English
+S121,English 10,T008,25,English
+S122,English 10,T003,25,English
+S123,English 10,T004,25,English
+S124,English 10,T005,25,English
+S125,Math 3,T011,25,Math
+S126,Math 3,T012,25,Math
+S127,Math 3,T013,25,Math
+S128,Math 3,T014,25,Math
+S129,Math 3,T009,25,Math
+S130,Math 3,T010,25,Math
+S131,Math 3,T011,25,Math
+S132,Math 4,T012,25,Math
+S133,Math 4,T013,25,Math
+S134,Math 4,T014,25,Math
+S135,Math 4,T055,25,Math
+S136,Math 4,T055,25,Math
+S137,Math 4,T055,25,Math
+S138,Math 4,T055,25,Math
+S139,English 12,T006,25,English
+S140,English 12,T007,25,English
+S141,English 12,T008,25,English
+S142,English 12,T056,25,English
+S143,English 12,T056,25,English
+S144,English 12,T056,25,English
+S145,English 12,T056,25,English
+S146,World History,T036,25,Social Studies
+S147,World History,T037,25,Social Studies
+S148,World History,T038,25,Social Studies
+S149,World History,T039,25,Social Studies
+S150,World History,T040,25,Social Studies
+S151,World History,T035,25,Social Studies
+S152,World History,T036,25,Social Studies
+S153,Government,T037,25,Social Studies
+S154,Government,T038,25,Social Studies
+S155,Government,T039,25,Social Studies
+S156,Government,T040,25,Social Studies
+S157,Government,T035,25,Social Studies
+S158,Government,T036,25,Social Studies
+S159,Government,T037,25,Social Studies
+S160,Economics,T038,25,Social Studies
+S161,Economics,T039,25,Social Studies
+S162,Economics,T040,25,Social Studies
+S163,Economics,T057,25,Social Studies
+S164,Economics,T057,25,Social Studies
+S165,Economics,T057,25,Social Studies
+S166,Economics,T057,25,Social Studies

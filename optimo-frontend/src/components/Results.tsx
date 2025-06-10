@@ -186,8 +186,14 @@ export const Results: React.FC<ResultsProps> = ({ job }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Prevent multiple fetches
+    let isMounted = true;
+    
     // Load actual results data from API
     const fetchResults = async () => {
+      // Don't fetch if already loading
+      if (!isMounted) return;
+      
       setLoading(true);
       try {
         console.log('Fetching results for job:', job);
@@ -201,6 +207,9 @@ export const Results: React.FC<ResultsProps> = ({ job }) => {
         const results = await api.getJobResults(jobId);
         console.log('Received results:', results);
         
+        // Only update state if component is still mounted
+        if (!isMounted) return;
+        
         // Update download URLs
         if (results && results.downloadUrls) {
           setDownloadUrls(results.downloadUrls);
@@ -213,25 +222,32 @@ export const Results: React.FC<ResultsProps> = ({ job }) => {
         
         // Update chart data if available
         if (results && results.chartData) {
+          console.log('Chart data received:', results.chartData);
+          
           if (results.chartData.utilizationDistribution) {
+            console.log('Utilization distribution:', results.chartData.utilizationDistribution);
             // Transform API data to chart format
             const transformedUtilizationData = transformUtilizationData(results.chartData.utilizationDistribution);
             setUtilizationData(transformedUtilizationData);
           } else {
             // Fall back to mock data
+            console.log('No utilization distribution data, using mock');
             setUtilizationData(generateUtilizationDistribution());
           }
           
           if (results.chartData.teacherLoadDistribution) {
+            console.log('Teacher load distribution:', results.chartData.teacherLoadDistribution);
             // Transform API data to chart format
             const transformedTeacherData = transformTeacherData(results.chartData.teacherLoadDistribution);
             setTeacherData(transformedTeacherData);
           } else {
             // Fall back to mock data
+            console.log('No teacher load distribution data, using mock');
             setTeacherData(generateBellCurveData());
           }
         } else {
           // Fall back to mock data
+          console.log('No chart data received, using mock data');
           setUtilizationData(generateUtilizationDistribution());
           setTeacherData(generateBellCurveData());
         }
@@ -252,27 +268,46 @@ export const Results: React.FC<ResultsProps> = ({ job }) => {
     };
     
     fetchResults();
-  }, [job]);
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, [job.id, job.jobId]); // Only re-fetch if job ID changes
 
   // Helper function to transform utilization data from API
   const transformUtilizationData = (apiData: any[]) => {
-    // Transform API data to the format expected by the chart
-    return apiData.map(item => ({
-      utilization: item.utilization,
-      density: item.count / 100, // Scale appropriately
-      sections: item.count,
-      actualSections: item.count
-    }));
+    // Ensure data is valid and transform to chart format
+    if (!Array.isArray(apiData)) return generateUtilizationDistribution();
+    
+    try {
+      return apiData.map(item => ({
+        utilization: Number(item.utilization) || 0,
+        density: Number(item.count) / 100 || 0, // Scale appropriately
+        sections: Number(item.count) || 0,
+        actualSections: Number(item.count) || 0
+      }));
+    } catch (error) {
+      console.error('Error transforming utilization data:', error);
+      return generateUtilizationDistribution();
+    }
   };
   
   // Helper function to transform teacher data from API
   const transformTeacherData = (apiData: any[]) => {
-    // Transform API data to the format expected by the chart
-    return apiData.map(item => ({
-      sections: item.load,
-      density: item.count / 100, // Scale appropriately
-      teachers: item.count
-    }));
+    // Ensure data is valid and transform to chart format
+    if (!Array.isArray(apiData)) return generateBellCurveData();
+    
+    try {
+      return apiData.map(item => ({
+        sections: Number(item.load) || 0,
+        density: Number(item.count) / 100 || 0, // Scale appropriately
+        teachers: Number(item.count) || 0
+      }));
+    } catch (error) {
+      console.error('Error transforming teacher data:', error);
+      return generateBellCurveData();
+    }
   };
 
   const handleDownload = async (type: string) => {
