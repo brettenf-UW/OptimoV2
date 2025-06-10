@@ -6,21 +6,18 @@ export interface FileUpload {
   error?: string;
 }
 
+// AWS Batch job statuses
+export type BatchStatus = 'SUBMITTED' | 'PENDING' | 'RUNNABLE' | 'STARTING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
+
 export interface Job {
   id: string;
-  jobId?: string; // Optional jobId for backend compatibility
-  status: 'pending' | 'running' | 'completed' | 'failed' | 
-          'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 
-          'SUBMITTED' | 'RUNNABLE' | 'STARTING' | 'SUCCEEDED'; // All AWS Batch statuses
-  createdAt: Date;
-  updatedAt: Date;
-  submittedAt?: Date; // Optional submittedAt for backend compatibility
+  status: BatchStatus;
+  createdAt: number; // Unix timestamp
+  completedAt?: number; // Unix timestamp
   progress: number;
   currentStep?: string;
   error?: string;
-  results?: JobResults;
   maxIterations?: number;
-  parameters?: any; // Parameters from backend including maxIterations
 }
 
 export interface JobResults {

@@ -110,10 +110,10 @@ function App() {
     setSelectedHistoryJob(job);
     if (job) {
       // When selecting a job
-      if (job.status === 'completed' || job.status === 'COMPLETED' || job.status === 'SUCCEEDED') {
+      if (job.status === 'SUCCEEDED') {
         setCompletedJob(job);
         setActiveStep(3); // Jump to results step
-      } else if (job.status === 'failed' || job.status === 'FAILED') {
+      } else if (job.status === 'FAILED') {
         // For failed jobs, just select them but don't change step
         setCompletedJob(null);
       } else {

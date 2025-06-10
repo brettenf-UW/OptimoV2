@@ -49,8 +49,8 @@ def lambda_handler(event, context):
         
         job_item = response['Item']
         
-        # Check if job is completed
-        if job_item['status'] != 'SUCCEEDED':
+        # Check if job is completed (handle both AWS Batch status and our normalized status)
+        if job_item['status'] not in ['SUCCEEDED', 'COMPLETED', 'completed']:
             return cors_response(400, {
                 'error': f'Job is not completed. Current status: {job_item["status"]}'
             })

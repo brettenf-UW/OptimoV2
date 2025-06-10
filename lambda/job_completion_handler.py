@@ -44,11 +44,8 @@ def lambda_handler(event, context):
                 print(f"Job name doesn't match expected format: {job_name}")
                 return {'statusCode': 200, 'body': json.dumps({'message': 'Not an Optimo job'})}
                 
-            # Map AWS Batch status to our status
-            if status == 'SUCCEEDED':
-                status = 'COMPLETED'
-            elif status == 'FAILED':
-                status = 'FAILED'
+            # Keep AWS Batch status as-is (SUCCEEDED, FAILED, etc.)
+            # The frontend and other handlers now handle both formats
         else:
             # Direct invocation (legacy support)
             job_id = event.get('jobId')

@@ -43,7 +43,7 @@ class ApiService {
 
   // Get presigned URL for file upload
   async getUploadUrl(fileName: string, fileType: string): Promise<{uploadUrl: string, fileKey: string}> {
-    const response = await this.api.post('/upload', { fileName, fileType });
+    const response = await this.api.post('/upload', { filename: fileName });
     return response.data;
   }
 
@@ -58,8 +58,8 @@ class ApiService {
 
   // Submit job with file keys
   async submitJob(data: JobSubmissionData): Promise<Job> {
-    // First upload all files and get their keys
-    const fileKeys: string[] = [];
+    // First upload all files and get their S3 keys
+    const s3Keys: Record<string, string> = {};
     
     for (const [key, file] of Object.entries(data.files)) {
       if (file) {
@@ -69,15 +69,21 @@ class ApiService {
         // Upload file
         await this.uploadFile(uploadUrl, file);
         
-        // Add file key to the list
-        fileKeys.push(fileKey);
+        // Map to expected s3Keys format
+        s3Keys[key] = fileKey;
       }
     }
     
-    // Submit job with file keys
+    // Submit job with s3Keys and parameters matching unified handler format
     const response = await this.api.post<Job>('/jobs', {
-      files: fileKeys,
-      parameters: data.parameters
+      s3Keys,
+      parameters: {
+        maxIterations: data.parameters.maxIterations,
+        minUtilization: data.parameters.minUtilization,
+        maxUtilization: data.parameters.maxUtilization,
+        optimalRangeMin: data.parameters.optimalMinUtilization,
+        optimalRangeMax: data.parameters.optimalMaxUtilization
+      }
     });
     
     return response.data;

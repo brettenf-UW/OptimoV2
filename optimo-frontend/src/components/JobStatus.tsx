@@ -28,8 +28,9 @@ import {
   Schedule as ScheduleIcon,
   PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
-import { Job } from '../types';
+import { Job, BatchStatus } from '../types';
 import api from '../services/api';
+import { getStatusDisplay, getStatusColor, isJobInProgress, isJobCompleted, canCancelJob } from '../utils/jobStatus';
 
 interface JobStatusProps {
   jobId?: string;
@@ -146,11 +147,14 @@ export const JobStatus: React.FC<JobStatusProps> = ({
       const fetchedJobs = await api.getJobs();
       // Ensure fetchedJobs is an array
       const jobsArray = Array.isArray(fetchedJobs) ? fetchedJobs : [];
-      // Sort by creation date (use submittedAt if createdAt doesn't exist)
+      // Sort by creation date (handle Unix timestamps)
       const sortedJobs = jobsArray.sort((a, b) => {
-        const dateA = new Date(a.createdAt || a.submittedAt || 0).getTime();
-        const dateB = new Date(b.createdAt || b.submittedAt || 0).getTime();
-        return dateB - dateA;
+        const timeA = a.createdAt || a.submittedAt || 0;
+        const timeB = b.createdAt || b.submittedAt || 0;
+        // Convert to milliseconds if Unix timestamp (less than year 10000)
+        const msA = timeA < 10000000000 ? timeA * 1000 : timeA;
+        const msB = timeB < 10000000000 ? timeB * 1000 : timeB;
+        return msB - msA;
       });
       // Show the 5 most recent jobs (including running ones)
       setJobs(sortedJobs.slice(0, 5));
@@ -177,8 +181,8 @@ export const JobStatus: React.FC<JobStatusProps> = ({
         prevJobs.map(j => j.id === id ? job : j)
       );
 
-      // Check for both lowercase 'completed' and uppercase 'COMPLETED' status
-      if ((job.status === 'completed' || job.status === 'COMPLETED') && onJobComplete) {
+      // Check if job completed successfully
+      if (isJobCompleted(job.status) && onJobComplete) {
         console.log('Job completed, triggering results display:', job);
         onJobComplete(job);
       }
@@ -215,12 +219,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({
   }, [jobId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (selectedJob && selectedJob.id && (
-      selectedJob.status === 'pending' || selectedJob.status === 'running' ||
-      selectedJob.status === 'PENDING' || selectedJob.status === 'RUNNING' ||
-      selectedJob.status === 'SUBMITTED' || selectedJob.status === 'RUNNABLE' ||
-      selectedJob.status === 'STARTING'
-    )) {
+    if (selectedJob && selectedJob.id && isJobInProgress(selectedJob.status)) {
       const interval = setInterval(() => {
         if (selectedJob.id) {
           fetchJobStatus(selectedJob.id);
@@ -233,11 +232,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({
 
   // Auto-refresh job list if any jobs are running
   useEffect(() => {
-    const hasRunningJobs = jobs.some(job => 
-      job.status === 'running' || job.status === 'RUNNING' || 
-      job.status === 'pending' || job.status === 'PENDING' ||
-      job.status === 'RUNNABLE' || job.status === 'STARTING'
-    );
+    const hasRunningJobs = jobs.some(job => isJobInProgress(job.status));
     
     if (hasRunningJobs && showJobsList) {
       const interval = setInterval(() => {
@@ -257,22 +252,18 @@ export const JobStatus: React.FC<JobStatusProps> = ({
     }
   };
 
-  const getStatusIcon = (status: Job['status']) => {
+  const getStatusIcon = (status: BatchStatus) => {
     switch (status) {
-      case 'pending':
-      case 'PENDING':
       case 'SUBMITTED':
+      case 'PENDING':
+        return <ScheduleIcon color="action" />;
       case 'RUNNABLE':
       case 'STARTING':
-        return <ScheduleIcon color="action" />;
-      case 'running':
+        return <PlayArrowIcon color="action" />;
       case 'RUNNING':
         return <PlayArrowIcon color="primary" />;
-      case 'completed':
-      case 'COMPLETED':
       case 'SUCCEEDED':
         return <CheckCircleIcon color="success" />;
-      case 'failed':
       case 'FAILED':
         return <ErrorIcon color="error" />;
       default:
@@ -280,28 +271,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({
     }
   };
 
-  const getStatusColor = (status: Job['status']): "default" | "primary" | "success" | "error" => {
-    switch (status) {
-      case 'pending':
-      case 'PENDING':
-      case 'SUBMITTED':
-      case 'RUNNABLE':
-      case 'STARTING':
-        return 'default';
-      case 'running':
-      case 'RUNNING':
-        return 'primary';
-      case 'completed':
-      case 'COMPLETED':
-      case 'SUCCEEDED':
-        return 'success';
-      case 'failed':
-      case 'FAILED':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
+  // Removed - using imported getStatusColor instead
 
   const getIterationIcon = (status: IterationProgress['status']) => {
     switch (status) {
@@ -344,14 +314,14 @@ export const JobStatus: React.FC<JobStatusProps> = ({
                       Current Job: {selectedJob.id.substring(0, 8)}
                     </Typography>
                     <Chip
-                      label={selectedJob.status.toUpperCase()}
+                      label={getStatusDisplay(selectedJob.status)}
                       color={getStatusColor(selectedJob.status)}
                       size="small"
                       sx={{ ml: 2 }}
                     />
                   </Box>
 
-                  {(selectedJob.status === 'running' || selectedJob.status === 'RUNNING') && (
+                  {selectedJob.status === 'RUNNING' && (
                     <>
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="subtitle2" gutterBottom>
@@ -401,7 +371,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({
                     </>
                   )}
 
-                  {(selectedJob.status === 'completed' || selectedJob.status === 'COMPLETED') && (
+                  {selectedJob.status === 'SUCCEEDED' && (
                     <Alert severity="success" sx={{ mt: 2 }}>
                       Optimization completed successfully! All {selectedJob.maxIterations || 3} iterations finished.
                     </Alert>
@@ -413,7 +383,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({
                     </Alert>
                   )}
 
-                  {(selectedJob.status === 'running' || selectedJob.status === 'RUNNING') && (
+                  {selectedJob.status === 'RUNNING' && (
                     <Box sx={{ mt: 2 }}>
                       <Button
                         variant="outlined"
@@ -454,7 +424,9 @@ export const JobStatus: React.FC<JobStatusProps> = ({
               // Ensure job has required properties
               const jobId = job?.id || job?.jobId || `unknown-${index}`;
               const jobStatus = job?.status || 'unknown';
-              const jobCreatedAt = job?.createdAt || job?.submittedAt || new Date();
+              // Handle Unix timestamp (seconds) or Date object
+              const timestamp = job?.createdAt || job?.submittedAt || Date.now() / 1000;
+              const jobCreatedAt = typeof timestamp === 'number' ? new Date(timestamp * 1000) : timestamp;
               
               return (
                 <ListItem
@@ -478,7 +450,7 @@ export const JobStatus: React.FC<JobStatusProps> = ({
                         onJobSelect(jobData);
                       }
                       // If job is completed, trigger the results view
-                      if ((jobStatus === 'completed' || jobStatus === 'COMPLETED' || jobStatus === 'SUCCEEDED') && onJobComplete) {
+                      if (jobStatus === 'SUCCEEDED' && onJobComplete) {
                         onJobComplete(jobData);
                       }
                     }
@@ -514,38 +486,55 @@ export const JobStatus: React.FC<JobStatusProps> = ({
                     }
                     secondary={
                       <Box component="span">
-                        {(jobStatus === 'running' || jobStatus === 'RUNNING') && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="body2" color="primary" component="span">
-                              In Progress • {job.progress || 0}%
-                            </Typography>
-                            <LinearProgress 
-                              variant="determinate" 
-                              value={job.progress || 0} 
-                              sx={{ width: 60, height: 4 }}
-                            />
-                          </Box>
-                        )}
-                        {(jobStatus === 'completed' || jobStatus === 'COMPLETED' || jobStatus === 'SUCCEEDED') && 
-                          <Typography variant="body2" component="span" sx={{ color: '#4caf50', fontWeight: 500 }}>
-                            ✓ Completed • Click to view results
-                          </Typography>
-                        }
-                        {(jobStatus === 'failed' || jobStatus === 'FAILED') && 
-                          <Typography variant="body2" component="span" sx={{ color: '#f44336' }}>
-                            ✗ Failed
-                          </Typography>
-                        }
-                        {(jobStatus === 'pending' || jobStatus === 'PENDING' || jobStatus === 'SUBMITTED') && 
-                          <Typography variant="body2" color="text.secondary" component="span">
-                            Queued...
-                          </Typography>
-                        }
-                        {(jobStatus === 'RUNNABLE' || jobStatus === 'STARTING') && 
-                          <Typography variant="body2" color="primary" component="span">
-                            Starting...
-                          </Typography>
-                        }
+                        {(() => {
+                          switch (jobStatus) {
+                            case 'RUNNING':
+                              return (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Typography variant="body2" color="primary" component="span">
+                                    In Progress • {job.progress || 0}%
+                                  </Typography>
+                                  <LinearProgress 
+                                    variant="determinate" 
+                                    value={job.progress || 0} 
+                                    sx={{ width: 60, height: 4 }}
+                                  />
+                                </Box>
+                              );
+                            case 'SUCCEEDED':
+                              return (
+                                <Typography variant="body2" component="span" sx={{ color: '#4caf50', fontWeight: 500 }}>
+                                  ✓ Completed • Click to view results
+                                </Typography>
+                              );
+                            case 'FAILED':
+                              return (
+                                <Typography variant="body2" component="span" sx={{ color: '#f44336' }}>
+                                  ✗ Failed
+                                </Typography>
+                              );
+                            case 'SUBMITTED':
+                            case 'PENDING':
+                              return (
+                                <Typography variant="body2" color="text.secondary" component="span">
+                                  Queued...
+                                </Typography>
+                              );
+                            case 'RUNNABLE':
+                            case 'STARTING':
+                              return (
+                                <Typography variant="body2" color="primary" component="span">
+                                  Starting...
+                                </Typography>
+                              );
+                            default:
+                              return (
+                                <Typography variant="body2" color="text.secondary" component="span">
+                                  {getStatusDisplay(jobStatus as BatchStatus)}
+                                </Typography>
+                              );
+                          }
+                        })()}
                       </Box>
                     }
                   />
