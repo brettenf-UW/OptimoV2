@@ -9,7 +9,7 @@ const awsConfig = {
     output: "optimo-output-files"
   },
   api: {
-    baseUrl: "https://ppwbzsy1bh.execute-api.us-west-2.amazonaws.com/prod"
+    baseUrl: "https://3dbrbfl8f3.execute-api.us-west-2.amazonaws.com/prod"
   }
 };
 
