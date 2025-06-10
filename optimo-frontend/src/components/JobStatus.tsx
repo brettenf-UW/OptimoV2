@@ -416,9 +416,9 @@ export const JobStatus: React.FC<JobStatusProps> = ({
 
             <List sx={{ py: 0, px: 0 }}>
             {jobs.map((job, index) => {
-              // Ensure job has required properties
-              const jobId = job?.id || job?.jobId || `unknown-${index}`;
-              const jobStatus = job?.status || 'unknown';
+              // Get job properties
+              const jobId = job.id;
+              const jobStatus = job.status;
               // Convert Unix timestamp (seconds) to Date object
               const jobCreatedAt = new Date((job.createdAt || Date.now() / 1000) * 1000);
               
