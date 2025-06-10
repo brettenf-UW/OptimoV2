@@ -147,14 +147,9 @@ export const JobStatus: React.FC<JobStatusProps> = ({
       const fetchedJobs = await api.getJobs();
       // Ensure fetchedJobs is an array
       const jobsArray = Array.isArray(fetchedJobs) ? fetchedJobs : [];
-      // Sort by creation date (handle Unix timestamps)
+      // Sort by creation date (newest first)
       const sortedJobs = jobsArray.sort((a, b) => {
-        const timeA = a.createdAt || a.submittedAt || 0;
-        const timeB = b.createdAt || b.submittedAt || 0;
-        // Convert to milliseconds if Unix timestamp (less than year 10000)
-        const msA = timeA < 10000000000 ? timeA * 1000 : timeA;
-        const msB = timeB < 10000000000 ? timeB * 1000 : timeB;
-        return msB - msA;
+        return (b.createdAt || 0) - (a.createdAt || 0);
       });
       // Show the 5 most recent jobs (including running ones)
       setJobs(sortedJobs.slice(0, 5));
@@ -424,9 +419,8 @@ export const JobStatus: React.FC<JobStatusProps> = ({
               // Ensure job has required properties
               const jobId = job?.id || job?.jobId || `unknown-${index}`;
               const jobStatus = job?.status || 'unknown';
-              // Handle Unix timestamp (seconds) or Date object
-              const timestamp = job?.createdAt || job?.submittedAt || Date.now() / 1000;
-              const jobCreatedAt = typeof timestamp === 'number' ? new Date(timestamp * 1000) : timestamp;
+              // Convert Unix timestamp (seconds) to Date object
+              const jobCreatedAt = new Date((job.createdAt || Date.now() / 1000) * 1000);
               
               return (
                 <ListItem
