@@ -105,9 +105,14 @@ def handle_upload(event: Dict) -> Dict:
         file_key = f"uploads/{file_id}/{filename}"
         
         # Generate presigned URL for upload
+        # Include Content-Type to avoid signature mismatch
         presigned_url = s3.generate_presigned_url(
             'put_object',
-            Params={'Bucket': INPUT_BUCKET, 'Key': file_key},
+            Params={
+                'Bucket': INPUT_BUCKET, 
+                'Key': file_key,
+                'ContentType': 'text/csv'  # Set a default content type
+            },
             ExpiresIn=3600
         )
         

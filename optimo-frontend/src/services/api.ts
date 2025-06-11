@@ -47,7 +47,9 @@ class ApiService {
     const response = await fetch(url, {
       method: 'PUT',
       body: file,
-      // Don't set any headers - let the browser handle it
+      headers: {
+        'Content-Type': 'text/csv'  // Must match what's in the presigned URL
+      }
     });
     
     if (!response.ok) {
