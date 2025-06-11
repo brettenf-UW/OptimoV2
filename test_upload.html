@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test S3 Upload</title>
+</head>
+<body>
+    <h1>Test S3 Upload</h1>
+    <input type="file" id="fileInput" accept=".csv">
+    <button onclick="testUpload()">Test Upload</button>
+    <pre id="output"></pre>
+
+    <script>
+        async function testUpload() {
+            const output = document.getElementById('output');
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                output.textContent = 'Please select a file';
+                return;
+            }
+            
+            try {
+                // Get presigned URL
+                output.textContent = 'Getting presigned URL...\n';
+                const response = await fetch('https://3dbrbfl8f3.execute-api.us-west-2.amazonaws.com/prod/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': 'https://brettenf-uw.github.io'
+                    },
+                    body: JSON.stringify({ filename: file.name })
+                });
+                
+                const data = await response.json();
+                output.textContent += 'Response: ' + JSON.stringify(data, null, 2) + '\n\n';
+                
+                // Upload file
+                output.textContent += 'Uploading file...\n';
+                const uploadResponse = await fetch(data.uploadUrl, {
+                    method: 'PUT',
+                    body: file
+                });
+                
+                output.textContent += 'Upload status: ' + uploadResponse.status + '\n';
+                if (!uploadResponse.ok) {
+                    const errorText = await uploadResponse.text();
+                    output.textContent += 'Error: ' + errorText + '\n';
+                }
+                
+            } catch (error) {
+                output.textContent += 'Error: ' + error.message + '\n';
+            }
+        }
+    </script>
+</body>
+</html>

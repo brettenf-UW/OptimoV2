@@ -43,7 +43,16 @@ class ApiService {
 
   // Upload file using presigned URL
   async uploadFile(url: string, file: File): Promise<void> {
-    await axios.put(url, file);
+    // Use fetch instead of axios for better control over the upload
+    const response = await fetch(url, {
+      method: 'PUT',
+      body: file,
+      // Don't set any headers - let the browser handle it
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+    }
   }
 
   // Submit job with file keys
