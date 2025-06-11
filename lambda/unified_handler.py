@@ -91,34 +91,40 @@ def lambda_handler(event: Dict, context: Any) -> Dict:
         return response(500, {'error': str(e)})
 
 def handle_upload(event: Dict) -> Dict:
-    """Generate presigned URL for file upload"""
+    """Handle file upload via base64"""
     try:
         body = json.loads(event.get('body', '{}'))
         # Accept both fileName (camelCase) and filename (lowercase) for compatibility
         filename = body.get('fileName') or body.get('filename', '')
+        file_content = body.get('fileContent', '')  # Base64 encoded
         
-        if not filename:
-            return response(400, {'error': 'Filename is required'})
+        if not filename or not file_content:
+            return response(400, {'error': 'Filename and fileContent are required'})
         
         # Generate unique key
         file_id = str(uuid.uuid4())
         file_key = f"uploads/{file_id}/{filename}"
         
-        # Generate presigned URL for upload
-        # Include Content-Type to avoid signature mismatch
-        presigned_url = s3.generate_presigned_url(
-            'put_object',
-            Params={
-                'Bucket': INPUT_BUCKET, 
-                'Key': file_key,
-                'ContentType': 'text/csv'  # Set a default content type
-            },
-            ExpiresIn=3600
+        # Decode and upload to S3
+        import base64
+        try:
+            file_bytes = base64.b64decode(file_content)
+        except Exception as decode_error:
+            return response(400, {'error': f'Invalid base64 encoding: {str(decode_error)}'})
+        
+        # Upload to S3
+        s3.put_object(
+            Bucket=INPUT_BUCKET,
+            Key=file_key,
+            Body=file_bytes,
+            ContentType='text/csv'
         )
         
+        logger.info(f"Successfully uploaded {filename} to {file_key}")
+        
         return response(200, {
-            'uploadUrl': presigned_url,
-            'fileKey': file_key
+            'fileKey': file_key,
+            'uploadUrl': f"s3://{INPUT_BUCKET}/{file_key}"  # For reference
         })
         
     except Exception as e:

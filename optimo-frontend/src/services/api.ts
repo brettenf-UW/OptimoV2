@@ -35,26 +35,34 @@ class ApiService {
     return jobs;
   }
 
-  // Get presigned URL for file upload
-  async getUploadUrl(fileName: string, fileType: string): Promise<{uploadUrl: string, fileKey: string}> {
-    const response = await this.api.post('/upload', { filename: fileName });
-    return response.data;
+  // Convert file to base64
+  private async fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        // Remove data:type prefix (e.g., "data:text/csv;base64,")
+        const base64Content = base64.split(',')[1];
+        resolve(base64Content);
+      };
+      reader.onerror = error => reject(error);
+    });
   }
 
-  // Upload file using presigned URL
-  async uploadFile(url: string, file: File): Promise<void> {
-    // Use fetch instead of axios for better control over the upload
-    const response = await fetch(url, {
-      method: 'PUT',
-      body: file,
-      headers: {
-        'Content-Type': 'text/csv'  // Must match what's in the presigned URL
-      }
+  // Upload file via base64
+  async uploadFile(file: File): Promise<string> {
+    const base64Content = await this.fileToBase64(file);
+    const response = await this.api.post('/upload', {
+      filename: file.name,
+      fileContent: base64Content
     });
     
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+    if (!response.data.fileKey) {
+      throw new Error('No fileKey returned from upload');
     }
+    
+    return response.data.fileKey;
   }
 
   // Submit job with file keys
@@ -64,11 +72,8 @@ class ApiService {
     
     for (const [key, file] of Object.entries(data.files)) {
       if (file) {
-        // Get presigned URL
-        const { uploadUrl, fileKey } = await this.getUploadUrl(file.name, file.type);
-        
-        // Upload file
-        await this.uploadFile(uploadUrl, file);
+        // Upload file and get S3 key
+        const fileKey = await this.uploadFile(file);
         
         // Map to expected s3Keys format
         s3Keys[key] = fileKey;
