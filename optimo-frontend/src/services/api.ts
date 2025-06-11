@@ -43,11 +43,7 @@ class ApiService {
 
   // Upload file using presigned URL
   async uploadFile(url: string, file: File): Promise<void> {
-    await axios.put(url, file, {
-      headers: {
-        'Content-Type': file.type
-      }
-    });
+    await axios.put(url, file);
   }
 
   // Submit job with file keys
