@@ -94,7 +94,8 @@ def handle_upload(event: Dict) -> Dict:
     """Generate presigned URL for file upload"""
     try:
         body = json.loads(event.get('body', '{}'))
-        filename = body.get('filename', '')
+        # Accept both fileName (camelCase) and filename (lowercase) for compatibility
+        filename = body.get('fileName') or body.get('filename', '')
         
         if not filename:
             return response(400, {'error': 'Filename is required'})

@@ -37,7 +37,7 @@ class ApiService {
 
   // Get presigned URL for file upload
   async getUploadUrl(fileName: string, fileType: string): Promise<{uploadUrl: string, fileKey: string}> {
-    const response = await this.api.post('/upload', { fileName: fileName, fileType: fileType });
+    const response = await this.api.post('/upload', { filename: fileName });
     return response.data;
   }
 
