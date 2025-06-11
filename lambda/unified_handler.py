@@ -26,10 +26,10 @@ dynamodb = boto3.resource('dynamodb')
 
 # Environment variables
 TABLE_NAME = os.environ.get('DYNAMODB_TABLE', 'optimo-jobs')
-INPUT_BUCKET = os.environ.get('S3_INPUT_BUCKET', 'optimo-input-files')
+INPUT_BUCKET = os.environ.get('S3_INPUT_BUCKET', 'optimo-input-files-v2')
 OUTPUT_BUCKET = os.environ.get('S3_OUTPUT_BUCKET', 'optimo-output-files')
 JOB_QUEUE = os.environ.get('JOB_QUEUE', 'optimo-job-queue')
-JOB_DEFINITION = os.environ.get('JOB_DEFINITION', 'optimo-job-updated')
+JOB_DEFINITION = os.environ.get('JOB_DEFINITION', 'optimo-job-def-v7')
 
 # CORS headers
 CORS_HEADERS = {

@@ -1,0 +1,4 @@
+Container Version History - Tue Jun 10 22:32:13 PDT 2025
+Current version: v6 (broken - expects wrong env vars)
+New version: v7 (fixed - reads JOB_ID, STUDENT_INFO_KEY, etc.)
+Fix: Updated run_batch_job.py to read Lambda environment variables correctly

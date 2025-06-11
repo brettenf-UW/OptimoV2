@@ -1,0 +1,16 @@
+# Quick fix Dockerfile - uses existing v6 as base
+FROM 529088253685.dkr.ecr.us-west-2.amazonaws.com/optimo-batch:v6
+
+# Install ALL missing dependencies to avoid back-and-forth
+RUN pip install \
+    pyyaml==6.0 \
+    requests==2.31.0 \
+    google-generativeai==0.3.0 \
+    python-dotenv==1.0.0 \
+    psutil==5.9.5
+
+# Just update the batch job script
+COPY scripts/run_batch_job.py /app/scripts/run_batch_job.py
+
+# Ensure it's executable
+RUN chmod +x /app/scripts/run_batch_job.py

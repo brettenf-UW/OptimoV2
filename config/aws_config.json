@@ -1,14 +1,14 @@
 {
   "region": "us-west-2",
   "buckets": {
-    "input": "optimo-input-files",
+    "input": "optimo-input-files-v2",
     "output": "optimo-output-files"
   },
   "api": {
     "baseUrl": "https://3dbrbfl8f3.execute-api.us-west-2.amazonaws.com/prod"
   },
   "batch": {
-    "jobDefinition": "optimo-job:8",
+    "jobDefinition": "optimo-job-def-v7",
     "jobQueue": "optimo-job-queue"
   }
 }

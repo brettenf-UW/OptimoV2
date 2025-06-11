@@ -5,7 +5,7 @@
 const awsConfig = {
   region: "us-west-2",
   buckets: {
-    input: "optimo-input-files",
+    input: "optimo-input-files-v2",
     output: "optimo-output-files"
   },
   api: {
