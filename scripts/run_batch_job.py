@@ -20,6 +20,9 @@ DYNAMODB_TABLE = os.environ.get('DYNAMODB_TABLE', 'optimo-jobs')
 AWS_REGION = os.environ.get('AWS_REGION', 'us-west-2')
 LICENSE_SECRET_NAME = os.environ.get('LICENSE_SECRET_NAME', 'optimo/gurobi-license')
 
+# Set AWS_DEFAULT_REGION for boto3
+os.environ['AWS_DEFAULT_REGION'] = AWS_REGION
+
 # Initialize AWS clients with explicit region
 s3 = boto3.client('s3', region_name=AWS_REGION)
 dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
@@ -102,31 +105,48 @@ def update_job_status(job_id, status, message=None, progress=None):
         logger.error(f"Error updating job status: {str(e)}")
 
 def download_input_files():
-    """Download input files from S3"""
+    """Download input files from S3 using environment variable keys"""
     try:
         input_dir = tempfile.mkdtemp()
         logger.info(f"Created temporary directory: {input_dir}")
         
-        # Download all files from the job folder
-        prefix = f"{JOB_ID}/"
-        logger.info(f"Downloading files from s3://{INPUT_BUCKET}/{prefix}")
+        # Map environment variables to local filenames
+        file_mappings = {
+            STUDENT_INFO_KEY: 'Student_Info.csv',
+            STUDENT_PREFERENCES_KEY: 'Student_Preference_Info.csv',
+            TEACHER_INFO_KEY: 'Teacher_Info.csv',
+            TEACHER_UNAVAILABILITY_KEY: 'Teacher_unavailability.csv',
+            SECTIONS_INFO_KEY: 'Sections_Information.csv',
+            PERIOD_KEY: 'Period.csv' if PERIOD_KEY else None
+        }
         
-        # List all objects with the job prefix
-        response = s3.list_objects_v2(Bucket=INPUT_BUCKET, Prefix=prefix)
+        # Download each file using the provided S3 keys
+        for s3_key, local_filename in file_mappings.items():
+            if s3_key and local_filename:
+                local_path = os.path.join(input_dir, local_filename)
+                logger.info(f"Downloading s3://{INPUT_BUCKET}/{s3_key} to {local_path}")
+                
+                try:
+                    s3.download_file(INPUT_BUCKET, s3_key, local_path)
+                    logger.info(f"Successfully downloaded {local_filename}")
+                except Exception as e:
+                    logger.error(f"Failed to download {s3_key}: {str(e)}")
+                    raise
         
-        if 'Contents' not in response:
-            raise Exception(f"No files found in s3://{INPUT_BUCKET}/{prefix}")
+        # If PERIOD_KEY is not provided, create a default Period.csv
+        period_path = os.path.join(input_dir, 'Period.csv')
+        if not os.path.exists(period_path):
+            logger.info("Creating default Period.csv")
+            with open(period_path, 'w') as f:
+                f.write("Period,Start_Time,End_Time\n")
+                f.write("1,08:00,09:00\n")
+                f.write("2,09:00,10:00\n")
+                f.write("3,10:00,11:00\n")
+                f.write("4,11:00,12:00\n")
+                f.write("5,13:00,14:00\n")
+                f.write("6,14:00,15:00\n")
         
-        # Download each file
-        for obj in response['Contents']:
-            key = obj['Key']
-            filename = os.path.basename(key)
-            local_path = os.path.join(input_dir, filename)
-            
-            logger.info(f"Downloading {key} to {local_path}")
-            s3.download_file(INPUT_BUCKET, key, local_path)
-        
-        # Verify required files exist
+        # Verify all required files exist
         required_files = ['Student_Info.csv', 'Student_Preference_Info.csv', 
                          'Teacher_Info.csv', 'Teacher_unavailability.csv', 
                          'Sections_Information.csv', 'Period.csv']
@@ -134,7 +154,7 @@ def download_input_files():
         for filename in required_files:
             filepath = os.path.join(input_dir, filename)
             if not os.path.exists(filepath):
-                raise Exception(f"Required file {filename} not found in downloaded files")
+                raise Exception(f"Required file {filename} not found after download")
             logger.info(f"Verified {filename} exists")
         
         return input_dir
