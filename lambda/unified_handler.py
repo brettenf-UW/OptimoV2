@@ -165,6 +165,12 @@ def handle_job_submission(event: Dict) -> Dict:
         
         batch_job_id = batch_response['jobId']
         
+        # Convert float parameters to Decimal for DynamoDB
+        if parameters:
+            for key, value in parameters.items():
+                if isinstance(value, float):
+                    parameters[key] = Decimal(str(value))
+        
         # Store job metadata in DynamoDB
         table = dynamodb.Table(TABLE_NAME)
         table.put_item(Item={
