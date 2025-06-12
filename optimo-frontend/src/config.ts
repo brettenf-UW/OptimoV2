@@ -4,7 +4,7 @@ const config = {
     baseUrl: process.env.REACT_APP_API_URL || "https://3dbrbfl8f3.execute-api.us-west-2.amazonaws.com/prod"
   },
   buckets: {
-    input: "optimo-input-files",
+    input: "optimo-input-files-v2",
     output: "optimo-output-files"
   },
   region: "us-west-2"

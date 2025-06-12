@@ -169,13 +169,9 @@ def run_optimization(input_dir):
         # Build command to run the pipeline
         cmd = [
             'python', '/app/scripts/run_pipeline.py',
-            '--data-dir', input_dir,
+            '--input-dir', input_dir,
             '--config', '/app/config/settings.yaml',
-            '--api-key', os.environ.get('GEMINI_API_KEY', ''),
-            '--max-iterations', str(MAX_ITERATIONS),
-            '--job-id', JOB_ID,
-            '--aws-region', AWS_REGION,
-            '--dynamodb-table', DYNAMODB_TABLE
+            '--api-key', os.environ.get('GEMINI_API_KEY', '')
         ]
         
         logger.info(f"Running command: {' '.join(cmd)}")
@@ -192,19 +188,28 @@ def run_optimization(input_dir):
         
         # Find output directory (should be created by the pipeline)
         output_dir = None
+        # Look for output directory in pipeline output
         for line in result.stdout.split('\n'):
-            if 'Output directory:' in line:
-                output_dir = line.split('Output directory:')[1].strip()
+            if 'Output saved to:' in line or 'Final output saved to:' in line:
+                output_dir = line.split('to:')[1].strip()
                 break
         
         if not output_dir:
+            # Look for the run directory pattern
+            for line in result.stdout.split('\n'):
+                if 'Started new run:' in line:
+                    run_name = line.split('Started new run:')[1].strip()
+                    output_dir = f"/app/data/runs/{run_name}/final"
+                    break
+        
+        if not output_dir:
             # Try to find the most recent runs directory
-            runs_dir = os.path.join(os.path.dirname(input_dir), 'runs')
+            runs_dir = '/app/data/runs'
             if os.path.exists(runs_dir):
                 subdirs = [d for d in os.listdir(runs_dir) if os.path.isdir(os.path.join(runs_dir, d))]
                 if subdirs:
                     subdirs.sort()
-                    output_dir = os.path.join(runs_dir, subdirs[-1])
+                    output_dir = os.path.join(runs_dir, subdirs[-1], 'final')
         
         if not output_dir or not os.path.exists(output_dir):
             raise Exception("Could not find output directory from pipeline")
@@ -226,25 +231,23 @@ def run_optimization(input_dir):
 def upload_results(output_dir):
     """Upload result files to S3"""
     try:
-        # Find and upload result files
-        result_files = [
-            'MasterSchedule.csv',
-            'StudentAssignments.csv', 
-            'TeacherSchedule.csv',
-            'ConstraintViolations.csv'
-        ]
+        # List all files in the output directory
+        logger.info(f"Looking for files in: {output_dir}")
+        if os.path.exists(output_dir):
+            files_in_dir = os.listdir(output_dir)
+            logger.info(f"Files found: {files_in_dir}")
         
+        # Find and upload all CSV files
         uploaded_files = []
         
-        for filename in result_files:
-            filepath = os.path.join(output_dir, filename)
-            if os.path.exists(filepath):
+        # Upload all CSV files found in the output directory
+        for filename in os.listdir(output_dir):
+            if filename.endswith('.csv'):
+                filepath = os.path.join(output_dir, filename)
                 key = f"jobs/{JOB_ID}/{filename}"
                 logger.info(f"Uploading {filename} to s3://{OUTPUT_BUCKET}/{key}")
                 s3.upload_file(filepath, OUTPUT_BUCKET, key)
                 uploaded_files.append(key)
-            else:
-                logger.warning(f"Result file {filename} not found")
         
         # Also upload any iteration summary files
         for filename in os.listdir(output_dir):
