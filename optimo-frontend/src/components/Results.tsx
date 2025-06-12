@@ -171,11 +171,18 @@ export const Results: React.FC<ResultsProps> = ({ job }) => {
   const [downloading, setDownloading] = useState<string | null>(null);
   const [downloadUrls, setDownloadUrls] = useState<Record<string, string>>({});
   const [metrics, setMetrics] = useState({
-    overallUtilization: 95,
-    sectionsOptimized: 100,
-    studentsPlaced: 100,
-    avgTeacherLoad: 4.2,
-    violations: 0
+    summary: {
+      overallUtilization: 95,
+      sectionsOptimized: 100,
+      studentsPlaced: 100,
+      averageTeacherLoad: 4.2,
+      violations: 0
+    },
+    charts: {
+      utilizationDistribution: [],
+      teacherLoadDistribution: []
+    },
+    optimizationSummary: ''
   });
   const [optimizationSummary, setOptimizationSummary] = useState<string[]>([
     "Completed 3 iterations in 2 minutes 15 seconds",
