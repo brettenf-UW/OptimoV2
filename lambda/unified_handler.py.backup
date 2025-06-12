@@ -214,19 +214,8 @@ def handle_list_jobs(event: Dict) -> Dict:
         result = table.scan()
         jobs = result.get('Items', [])
         
-        # Sort by creation date (newest first), handling both formats
-        def get_sort_key(job):
-            created = job.get('createdAt', 0)
-            # If it's already a number, use it
-            if isinstance(created, (int, float, Decimal)):
-                return float(created)
-            # If it's a string (ISO format), convert to timestamp
-            try:
-                return datetime.fromisoformat(created.replace('Z', '')).timestamp()
-            except:
-                return 0
-        
-        jobs.sort(key=get_sort_key, reverse=True)
+        # Sort by creation date (newest first), converting to int for comparison
+        jobs.sort(key=lambda x: int(x.get('createdAt', 0)), reverse=True)
         
         # For each job, get current Batch status if still running
         for job in jobs:

@@ -216,14 +216,14 @@ export const Results: React.FC<ResultsProps> = ({ job }) => {
           setMetrics(results.metrics);
         }
         
-        // Update chart data if available
-        if (results && results.chartData) {
-          console.log('Chart data received:', results.chartData);
+        // Update chart data if available - look in metrics.charts
+        if (results && results.metrics && results.metrics.charts) {
+          console.log('Chart data received:', results.metrics.charts);
           
-          if (results.chartData.utilizationDistribution) {
-            console.log('Utilization distribution:', results.chartData.utilizationDistribution);
+          if (results.metrics.charts.utilizationDistribution) {
+            console.log('Utilization distribution:', results.metrics.charts.utilizationDistribution);
             // Transform API data to chart format
-            const transformedUtilizationData = transformUtilizationData(results.chartData.utilizationDistribution);
+            const transformedUtilizationData = transformUtilizationData(results.metrics.charts.utilizationDistribution);
             setUtilizationData(transformedUtilizationData);
           } else {
             // Fall back to mock data
@@ -231,10 +231,10 @@ export const Results: React.FC<ResultsProps> = ({ job }) => {
             setUtilizationData(generateUtilizationDistribution());
           }
           
-          if (results.chartData.teacherLoadDistribution) {
-            console.log('Teacher load distribution:', results.chartData.teacherLoadDistribution);
+          if (results.metrics.charts.teacherLoadDistribution) {
+            console.log('Teacher load distribution:', results.metrics.charts.teacherLoadDistribution);
             // Transform API data to chart format
-            const transformedTeacherData = transformTeacherData(results.chartData.teacherLoadDistribution);
+            const transformedTeacherData = transformTeacherData(results.metrics.charts.teacherLoadDistribution);
             setTeacherData(transformedTeacherData);
           } else {
             // Fall back to mock data
@@ -248,9 +248,9 @@ export const Results: React.FC<ResultsProps> = ({ job }) => {
           setTeacherData(generateBellCurveData());
         }
         
-        // Update optimization summary if available
-        if (results && results.optimizationSummary) {
-          setOptimizationSummary(results.optimizationSummary);
+        // Update optimization summary if available - look in metrics
+        if (results && results.metrics && results.metrics.optimizationSummary) {
+          setOptimizationSummary(results.metrics.optimizationSummary);
         }
         
       } catch (err) {
@@ -345,42 +345,43 @@ export const Results: React.FC<ResultsProps> = ({ job }) => {
     }
   };
 
-  // Create metrics cards using real data
+  // Create metrics cards using real data from metrics.summary
+  const summary = metrics?.summary || {};
   const metricsCards = [
     {
       title: 'Overall Utilization',
-      value: `${metrics.overallUtilization}%`,
+      value: `${Math.round(summary.overallUtilization || 0)}%`,
       subtitle: 'Average across all sections',
       icon: <SpeedIcon />,
       color: theme.palette.success.main,
     },
     {
       title: 'Sections Optimized',
-      value: `${metrics.sectionsOptimized}%`,
-      subtitle: 'Within target range',
+      value: `${summary.sectionsOptimized || 0}`,
+      subtitle: 'Within target range (70-110%)',
       icon: <CheckCircleIcon />,
       color: theme.palette.success.main,
     },
     {
       title: 'Students Placed',
-      value: `${metrics.studentsPlaced}%`,
-      subtitle: 'All preferences met',
+      value: `${Math.round(summary.studentsPlaced || 0)}%`,
+      subtitle: 'Successfully assigned',
       icon: <GroupsIcon />,
       color: theme.palette.success.main,
     },
     {
       title: 'Avg Teacher Load',
-      value: metrics.avgTeacherLoad,
+      value: `${(summary.averageTeacherLoad || 0).toFixed(1)}`,
       subtitle: 'sections per teacher',
       icon: <SchoolIcon />,
       color: theme.palette.info.main,
     },
     {
       title: 'Violations',
-      value: `${metrics.violations}%`,
+      value: `${summary.violations || 0}`,
       subtitle: 'Constraint violations',
       icon: <WarningIcon />,
-      color: theme.palette.success.main,
+      color: summary.violations > 0 ? theme.palette.warning.main : theme.palette.success.main,
     },
   ];
 

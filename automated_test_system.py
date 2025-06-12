@@ -77,7 +77,7 @@ class OptimizationTester:
         table.put_item(Item={
             'jobId': job_id,
             'status': 'SUBMITTED',
-            'createdAt': datetime.utcnow().isoformat(),
+            'createdAt': int(datetime.utcnow().timestamp()),
             'inputFiles': list(TEST_FILES.keys())
         })
         
